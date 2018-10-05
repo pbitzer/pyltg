@@ -16,29 +16,52 @@ class ENTLN(Ltg):
     Class to handle Earth Networks Total Lightning Network data.
 
     Attributes:
-        data
+        _data : Dataframe
+            The underlying data.
     """
     
     """Methods
     
     """    
-    def __init__(self, fileName=None):
-        if fileName is not None:
-            self.readFile(fileName)
+    def __init__(self, filename=None):
+        """
+        Initialization.
 
-    def readFile(self, fileName, full=False):
-        # Given a filename, load the data into the object 
+        If you don't provide a file name, you'll have to call `readFile`
+        yourself to actually do anything useful.
 
-        if isinstance(fileName, list):
-            if len(fileName) > 1:
+        Parameters
+        ----------
+        filename : str
+            The file name to be read in.
+        """
+        if filename is not None:
+            self.readFile(filename)
+
+    def readFile(self, filename, full=False):
+        """
+        Given a filename, load the data into the object.
+
+        Parameters
+        ----------
+        filename: str
+            The file name to be read in.
+        full : boolean, default: False
+            If true, try to read in some of the solution attributes.
+            Experimental.
+
+        """
+
+        if isinstance(filename, list):
+            if len(filename) > 1:
                 print('Multiple files not allowed yet')
-            fileName = fileName[0]
+            filename = filename[0]
 
         types = {'flashPortionHistoryID': np.int64, 'flashPortionID': str, 'flashID': str,
-                    'nullTime': str, 'time': str,
-                    'lat': np.float, 'lon': np.float, 'alt': np.float,
-                    'type': str,
-                    'amp': np.float}
+                 'nullTime': str, 'time': str,
+                 'lat': np.float, 'lon': np.float, 'alt': np.float,
+                 'type': str,
+                 'amp': np.float}
 
         # Make a dict for the keywords to read_csv, no matter what:
         pdArgs = {'skiprows': 1,
@@ -61,13 +84,13 @@ class ENTLN(Ltg):
         # Finally, add in the rest of the keywords:
         # (Needs to be after the check for full in case we get more fields)
         pdArgs.update({'names': list(types.keys()), 
-                       'usecols': list(types.keys()), 
+                       'usecols': list(types.keys()),
                        'dtype': types})
 
         # We'll read the chunks into a list:
         rawData = list()
 
-        reader = pd.read_csv(fileName, **pdArgs)
+        reader = pd.read_csv(filename, **pdArgs)
 
         for chunk in reader:
             # The first two columns are not relevant for us, and
@@ -80,7 +103,7 @@ class ENTLN(Ltg):
             chunk.time = chunk.time.astype('datetime64')
             
             # change the ype field to a string of G or C (for CG/IC)
-            chunk.type.replace(to_replace={'0':'G', '1':'C'}, inplace=True)
+            chunk.type.replace(to_replace={'0': 'G', '1': 'C'}, inplace=True)
 
             # todo: process the "extra: fields
             # todo: change flashID to some sort of integer (from string)

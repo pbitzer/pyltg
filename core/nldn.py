@@ -15,34 +15,37 @@ class NLDN(Ltg):
     """
     Class to handle Vaisala data, either NLDN or GLD.
 
-    Under the hood, the data is simply a pandas DataFrame
+    Inherits the Ltg baseclass, so check out those methods too.
+
+    Under the hood, the data is simply a pandas DataFrame.
+
     Attributes:
-        _data
+        _data : Dataframe
+            The underlying data.
     """
     
     """Methods
     
     """    
-    def __init__(self, fileName=None):
-        if fileName is not None:
-            self.readFile(fileName)
+    def __init__(self, filename=None):
+        if filename is not None:
+            self.readFile(filename)
 
-    def readFile(self, fileName):
+    def readFile(self, filename):
         """
         Given a filename, read the data and load it into the object.
+
         Parameters
         ----------
-        fileName
-
-        Returns
-        -------
+        filename : string
+            The file name to be read.
 
         """
 
-        if isinstance(fileName, list):
-            if len(fileName) > 1:
+        if isinstance(filename, list):
+            if len(filename) > 1:
                 print('Multiple files not allowed yet')
-            fileName = fileName[0]
+            filename = filename[0]
 
         colNames = ('date', 'time', 'lat', 'lon', 'current', '_kA', '_multi', 'semimajor', 
                     'semiminor', 'axis_ratio', 'azimuth', 'chisq', 'num_sensors', 'type')
@@ -51,7 +54,7 @@ class NLDN(Ltg):
         
         chunkSize = 100000  # How much of the file do we read at once?
         
-        reader = pd.read_csv(fileName, names=colNames, header=None,
+        reader = pd.read_csv(filename, names=colNames, header=None,
                              delim_whitespace=True, iterator=True)
         
         # Read the first line:

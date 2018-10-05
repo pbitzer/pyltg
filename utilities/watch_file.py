@@ -1,4 +1,9 @@
 
+"""
+This file is not documented. Use at your own risk!
+# todo: add doc
+"""
+
 from PyQt5.QtCore import QFileSystemWatcher
 
 

@@ -31,15 +31,34 @@ class LMA(Ltg):
     Class to handle LMA source data.
     """
     def __init__(self, file):
+        """
+        Initialization
+
+        Parameters
+        ----------
+        file : str
+            The file to be read in.
+        """
         
-        super().__init__()  # initialize the base class
+        super().__init__()  # initialize the inherited baseclass
         
         self.__colNames()  # mapping from columns in the file to object props
         
         self.readFile(file)
                 
     def __colNames(self):
-        # Map the column names. Make sure time, lat, lon, alt are included.
+        """
+        Map the column names. Make sure time, lat, lon, alt are included.
+
+        LMA files come in different flavors and use different internal names
+        for the same fields (sigh). This method provides some of the most used
+        internal names and map them to a common name.
+
+        Returns
+        -------
+
+        """
+
         # Each key is the name that's in the file, and the value is the
         # name that's used by the object. This means we could have 
         # several keys with the same value...
@@ -56,6 +75,15 @@ class LMA(Ltg):
                 'mask': 'mask'}
 
     def readFile(self, file):
+        """
+        Read the given file.
+
+        Parameters
+        ----------
+        file : str
+            The file to be read in.
+
+        """
         from itertools import islice
         import gzip
 

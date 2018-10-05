@@ -34,8 +34,22 @@ class Ltg(object):
         else:
             raise KeyError('Unknown column name. Valid ones: ' + ', '.join(self._data.columns))
 
-    def __getitem__(self, key):        
-        # Overload the indexing operator to get the specified rows of the underlying data
+    def __getitem__(self, key):
+        """
+        Overload the indexing operator to get the specified columns of the underlying data
+
+        Parameters
+        ----------
+        key : str
+            The name of the data attribute you want to get. This varies from data
+            set to data set, but 'time', 'lat', 'lon' should always be there.
+
+        Returns
+        -------
+        The data of interest, (usually) as a Pandas Series
+
+        """
+
         # todo: check for bad key (TypeError)
         # todo: check for bad indices (IndexError)
         return self._data.iloc[key]
@@ -43,13 +57,40 @@ class Ltg(object):
     def __iadd__(self, other):
         print('overload +=')  # todo: overload +=
 
-    def addField(self, fieldName, data):
-        # Add a field (i.e., column) to the Dataframe
+    def addField(self, field_name, data):
+        """
+        Add a field (i.e., column) to the underlying Dataframe
+
+        This isn't typically used outside of core developers.
+        Parameters
+        ----------
+        field_name : str
+            The name of the field to add.
+        data : array
+            The data to be added.
+        """
+
         # TODO: make sure the number of data matches existing element
-        self._data[fieldName] = data
+        self._data[field_name] = data
         
     def addRecord(self, data):
-        # Add a record (i.e., row) to the Dataframe
+        """
+        Add a record (i.e., row) to the Dataframe.
+
+        This method will add some some data to the underlying Dataframe.
+        Caution: very little error catching is implemented.
+
+        Parameters
+        ----------
+        data : array
+            The data to be added. The number of elements should match the number
+            of columns currently in the Dataframe.
+
+        Returns
+        -------
+
+        """
+        #
         nRec = len(self._data)
         
         # If there's no record, we need to "initialize" the property a little differently...
@@ -60,6 +101,26 @@ class Ltg(object):
             self._data.loc[nRec] = data
         
     def limit(self, **kwargs):
+        """
+        Limit the underlying data based on the inputs.
+
+        To use this, pass in the data attributes of the data to be limited and
+        their range, e.g.,
+            Ltg.limit(lat = [30, 40])
+
+        Parameters
+        ----------
+        kwargs : varies
+            This should be provided in key-range pairs. The given key will be
+            limited according to the provided range.
+
+        Returns
+        -------
+        Tuple
+            The returned tuple contains the indices (rows) and the count of the
+            limited values.
+
+        """
         # Pass in the data attributes of the data to be limited and their range, 
         # e.g., 
         # Ltg.limit(lat = [30, 40])

@@ -3,33 +3,55 @@ import pyproj
 
 
 def rot_matrix_ecef2enu(lam, phi):
-    # Define the rotation matrix to go from ECEF coordinates to ENU.
-    # lam = "lon"
-    # phi = "lat"
+    """
+    Define the rotation matrix to go from ECEF coordinates to ENU.
+
+    This doesn't seem to be in the package pyproj, so we'll define it here.
+    Typically, you won't need to call this function.
+
+    Parameters
+    ----------
+    lam : numeric
+        The longitude of the center of the ENU system.
+    phi : numeric
+        The longitude of the center of the ENU system.
+
+    Returns
+    -------
+    A 3x3 numpy array defining the rotation matrix.
+
+    """
+    # Make the matrix below a little easier to type by defining a few variables:
     sLam = np.sin(lam)
     cLam = np.cos(lam)
     sPhi = np.sin(phi)
     cPhi = np.cos(phi)
     
-    rotMatrix = np.array( [[-sLam,      cLam,       0], 
-                          [-sPhi*cLam,  -sPhi*sLam, cPhi], 
-                          [cPhi*cLam,   cPhi*sLam,  sPhi]] )
+    rotMatrix = np.array([[-sLam,      cLam,       0],
+                         [-sPhi*cLam,  -sPhi*sLam, cPhi],
+                         [cPhi*cLam,   cPhi*sLam,  sPhi]])
     
     return rotMatrix
 
 
 def lla2enu(lats, lons, alts, center=None):
     """
-    Convert lat, lon, alt to ENU coordinates.
+    Convert lat, lon, alt to ENU (East North Up) coordinates.
 
-    If no center is given, use the average lat/lon/alt of input
+    If no center is given, use the average lat/lon/alt of input. This is the
+    sister function to `enu2lla`
 
     Parameters
     ----------
-    lats
-    lons
-    alts
-    center
+    lats : array-like
+        The latitudes of the data
+    lons : array-like
+        The longitudes of the data
+    alts : array-like
+        The altitudes of the data (in km)
+    center : three element array-like
+        The lat, lon, alt of the center of the ENU coordinate system. If none
+        is given, then then average of each input is used.
 
     Returns
     -------
@@ -62,25 +84,31 @@ def lla2enu(lats, lons, alts, center=None):
     rotMatrix = rot_matrix_ecef2enu(lam, phi)
     
     # Finally, transform ECEF to ENU
-    enu = rotMatrix.dot(vec)/1e3 #return in km
+    enu = rotMatrix.dot(vec)/1e3  # return in km
     
     # Return as an numpy record array
     return np.core.records.fromarrays(enu, names='x,y,z')
     
 
-def enu2lla(x, y, z=None, center=None):
+def enu2lla(x, y, z, center):
     """
-    Convert from ENU coordinates to lat/lon/alt.
+    Convert from ENU (East North Up) coordinates to latitude/longitude/altitude.
 
     Center is lat/lon/alt array like
     x, y, z in km
 
+    This is the sister function to `lla2enu`
+
     Parameters
     ----------
-    x
-    y
-    z
-    center
+    x : array-like
+        The east-west (x) coordinates of the data in km.
+    y : array-like
+        The north-south (y) coordinates of the data in km.
+    z : array-like
+        The up-down (z) coordinates of the data in km.
+    center : three element array-like
+        The lat/lon/alt of the center of the ENU coordinate system.
 
     Returns
     -------
@@ -113,4 +141,4 @@ def enu2lla(x, y, z=None, center=None):
     lla = np.core.records.fromarrays([lla[0], lla[1], lla[2]],
                                      dtype=dtype)
         
-    return lla 
+    return lla
