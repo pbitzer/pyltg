@@ -15,10 +15,6 @@ class Ltg(object):
     Very few users will ever need to initialize this class directly, but all
     lightning classes will inherit this class and its methods.
     """
-    
-    @property
-    def data(self):
-        return self._data
 
     def __init__(self, *args, **kwargs):
         self._data = pd.DataFrame(*args, **kwargs)  # initialize to an empty DataFrame
@@ -27,12 +23,19 @@ class Ltg(object):
         return self._data.shape[0]
         
     def __getattr__(self, name):
-        # Check to see if this is a valid column name in the data DataFrame:
-        if name in self._data.columns:
+        # Override the get attribute to get the column name 
+        # of the data DataFrame:
+
+        # We need to catch calls to access the (class) attribute data, 
+        # else we'll end up with inifinite recursion when finding a column
+        # (seems to affect pickling mostly)
+        if name == 'data' or name == '_data':
+            return object.__getattribute__(self, '_data')
+        elif name in self._data.columns:
             return self._data[name].values
             # todo: try/except?
         else:
-            raise KeyError('Unknown column name. Valid ones: ' + ', '.join(self._data.columns))
+            raise AttributeError('Unknown column name. Valid ones: ' + ', '.join(self._data.columns))
 
     def __getitem__(self, key):
         """
@@ -126,6 +129,7 @@ class Ltg(object):
         # Ltg.limit(lat = [30, 40])
         # will return the indices of the data with lats between 30,40
         # Any attribute in the data will work.
+        # If times, either pass in int64 or datetime64[ns]
         import numpy as np
 
         boolVal = np.full(len(self._data), True)  # an array of all true
