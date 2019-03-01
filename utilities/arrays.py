@@ -3,6 +3,7 @@
 Functions for various operations on numpy arrays
 """
 
+import numpy as np
 def rebin(arr, shape, scheme=None):
     """
     Given a input array, change the array such that the new array dimensions
@@ -44,12 +45,6 @@ def rebin(arr, shape, scheme=None):
     """
     
     from scipy.ndimage import zoom as sci_zoom # for upsample
-    from numpy import divmod as np_divmod
-
-    from numpy import any as np_any
-    from numpy import all as np_all
-    from numpy import reshape as np_reshape
-    
     
     # First, make sure we have the same number of dimensions:
     if arr.ndim != len(shape):
@@ -57,15 +52,15 @@ def rebin(arr, shape, scheme=None):
         
     # Now, check that the new array dimensions are an integral factor
     # of the original:
-    divisor_down = np_divmod(arr.shape, shape)  # if all zero, we're downsampling
-    divisor_up = np_divmod(shape, arr.shape)  # if all zero, we're upsampling
+    divisor_down = np.divmod(arr.shape, shape)  # if all zero, we're downsampling
+    divisor_up = np.divmod(shape, arr.shape)  # if all zero, we're upsampling
 
     # Now, let's figure out if we're up/down sampling...
-    if np_all(divisor_up[1] == divisor_down[1]):
+    if np.all(divisor_up[1] == divisor_down[1]):
         # If these are the same, then the the new shape is same
         # (so why are you here? :-D)    
         new_arr = arr
-    elif not np_any(divisor_down[1]):
+    elif not np.any(divisor_down[1]):
         # If this is all zero, then we are downsampling:
         # We can either resample the array or average
         if scheme is None:
@@ -77,7 +72,7 @@ def rebin(arr, shape, scheme=None):
             # Average the array:
             blowup_shape = (shape[0], arr.shape[0]//shape[0], 
                             shape[1], arr.shape[1]//shape[1])
-            new_arr = np_reshape(arr, blowup_shape).mean(-1).mean(1)
+            new_arr = np.all(arr, blowup_shape).mean(-1).mean(1)
             
         elif scheme == 'sample':
             strides = divisor_down[0]
@@ -88,7 +83,7 @@ def rebin(arr, shape, scheme=None):
             new_arr = arr[::strides[0], ::strides[1]]
         else:
             raise ValueError("Invalid scheme for downsampling")
-    elif not np_any(divisor_up[1]):
+    elif not np.any(divisor_up[1]):
         pass
         # For upsampling, we'll use scipy.ndimage.zoom
         if scheme == 'sample':
