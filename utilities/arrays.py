@@ -35,13 +35,7 @@ def rebin(arr, shape, scheme=None):
         If upsampling, this can be 'sample', 'bilinear', 'cubic', or None.
         If 'bilinear' or None (default), the bilinear interpolation is done.
         If 'cubic', then cubic interpolation is done.
-        If 'sample', then no interpolation is done and elements are repeated.
-    
-    arr - numpy 2 dim ndarray
-    shape - tuple, list
-    
-    scheme = 'sample' (downsample, upsample), 'cubic' (upsample), 'bilinear' (upsample)
-    
+        If 'sample', then no interpolation is done and elements are repeated.    
     """
     
     from scipy.ndimage import zoom as sci_zoom # for upsample
