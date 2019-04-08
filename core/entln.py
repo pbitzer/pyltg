@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Nov 10 15:14:18 2016
 
-@author: bitzer
+Module for Earth Networks Total Lightning Network (ENTLN) data.
+
+Examples
+---------
+Basic use is to just initialize the class with a ENTLN pulse file::
+    
+    f = 'LtgFlashPortions20180403.csv.gz'
+    eni = ENLTN(f)
+
 """
 
 import numpy as np
@@ -15,25 +22,45 @@ class ENTLN(Ltg):
     """
     Class to handle Earth Networks Total Lightning Network data.
 
-    Attributes:
+
+    Many of the following are not attributes of the class, but
+    are columns in the underlying Dataframe. But, you can access them
+    as you would an attribute....
+    
+    Attributes
+    -----------
         _data : Dataframe
-            The underlying data.
+            The underlying data. A "real" attribute of the class.
+                
+        flashID : str
+            The flash ID
+        time : numpy.datetime64[ns]
+            The source time of the pulse. 
+        lat : numpy.float
+            The latitude of the pulse
+        lon : numpy.float
+            The longitude of the pulse            
+        alt : numpy.float
+            The altitude of the pulse, in kilometers. This field is more
+            or less nonsense.
+        type : str
+            The pulse type, either C (intracloud) or G (cloud-to-ground)
+        amp : numpy.float
+            The peak current of the pulse, in kiloamps. NOTE: THIS WILL BE 
+            CHANGED TO `current`
+            
     """
-    
-    """Methods
-    
-    """    
+        
     def __init__(self, filename=None):
         """
-        Initialization.
-
-        If you don't provide a file name, you'll have to call `readFile`
+        If you don't provide a file name, you'll have to call :meth:`readFile`
         yourself to actually do anything useful.
 
         Parameters
         ----------
         filename : str
             The file name to be read in.
+            
         """
         if filename is not None:
             self.readFile(filename)

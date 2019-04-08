@@ -18,21 +18,23 @@ def gap_nan(arr1, arr2, gap):
     Right now, you must pass two arrays. This function could be extended so
     that only one, or more than two arrays, could be passed.
 
+    Inspiration provided by Craig Markwardt's IDL routine by a similar name.
+
     Parameters
     ----------
     arr1 : array-like
         The array you wish to add NaNs to.
     arr2 : array-like
         A related array (to :param arr1:) that will get NaNs in the same
-        location. A common use is that :param arr1: will have times,
-        and :param arr2: will have the corresponding data to the time series.
+        location. A common use is that `arr1` will have times,
+        and `arr2` will have the corresponding data to the time series.
     gap : numeric
-        Any gap in :param arr1: bigger than the provided value will have a
+        Any gap in `arr1` bigger than the provided value will have a
         NaN inserted.
 
     Returns
     -------
-    Tuple
+    tuple
         The arrays with NaNs (same order as passed in)
     """
 
@@ -79,19 +81,28 @@ def get_actual_ticks(axis):
     """
     Get ticks on the given axis that are actually on the plot.
 
-    Annoyingly, the method axes.get_ticklabel() in matplotlib will return
+    Annoyingly, the method `axis.get_ticklabel()` in matplotlib will return
     ticks that aren't actually on the plot. (Similar for axis methods.)
-    This method will return the ticks
-    that are.
+    This method will return the ticks that are.
 
-    The ticks must be drawn for this to work, for example with
+    The ticks must be drawn for this to work, for example with::
 
-    fig.canvas.draw()
+        fig.canvas.draw()
+        
+    More generally::
+        
+        fig, ax = plt.subplots()
+        get_actual_ticks(ax.xaxis)
 
     Parameters
     ----------
-    axis : Matplotlib axis
-        The axis you wish to the ticks from.
+    axis : Matplotlib Axis
+        The axis you wish to get the ticks from.
+        
+    Returns
+    --------
+    numpy array
+        The tick values currently in view.
 
     """
     import numpy as np
@@ -116,14 +127,14 @@ def time_axis(axis, relative=True, title=True):
     Parameters
     ----------
     axis : Matplotlib axis
-        The axis you wish to the ticks from.
-    relative : boolean, default: True
+        The axis you wish to transform.
+    relative : bool
         If true, "relative" ticks are used. This means the first tick is zero,
         and the other ticks are incremented relative to this.
         NOTE: Right now, this keyword has no effect - a relative axis
         is always returned.
-    title : boolean, default: True
-        If true, a title is added to the axis with the "relative" time
+    title : bool
+        If True, a title is added to the axis with the "relative" time
     """
     import matplotlib.ticker as mtick
     import numpy as np
