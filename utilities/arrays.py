@@ -4,6 +4,7 @@ Functions for various operations on numpy arrays
 """
 
 import numpy as np
+
 def rebin(arr, shape, scheme=None):
     """
     Given a input array, change the array such that the new array dimensions
@@ -27,15 +28,20 @@ def rebin(arr, shape, scheme=None):
         the original array, and must be integers. You can either do upsampling 
         (the new shape is bigger) or downsampling (the new shape is smaller), 
         but you can't do upsampling on one dimension and downsampling on the other.
-    scheme : string, default: None
-        If downsampling, this can be 'sample' or None. If None, then the 
-        rebinned elements are averaged. If 'sample', the rebinned elements
-        are sampled via strides.
-        
-        If upsampling, this can be 'sample', 'bilinear', 'cubic', or None.
-        If 'bilinear' or None (default), the bilinear interpolation is done.
-        If 'cubic', then cubic interpolation is done.
-        If 'sample', then no interpolation is done and elements are repeated.    
+    scheme : str (mostly)
+        If downsampling:
+            'sample'
+                Rebinned elements are sample via strides into the array.
+            None
+                The rebinned elements are averaged. Note: not a string!
+        If upsampling:
+            'sample'
+                No interpolation is done and elements are repeated.
+            'bilinear' or None
+                Bilinear interpolation is done. This is the default.
+            'cubic'
+                Cubic interpolation is done.
+                
     """
     
     from scipy.ndimage import zoom as sci_zoom # for upsample

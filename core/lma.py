@@ -1,8 +1,41 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Dec 27 16:58:49 2017
+Module to read in Lightning Mapping Array (LMA) data.
 
-@author: bitzer
+Examples
+---------
+Basic use is to just initialize the class with a LMA source file::
+    
+    from pyltg import LMA
+    import numpy as np
+    
+    f = 'nalma_lylout_20170427_07_3600.dat.gz'
+    lma = LMA(f)
+
+Print the time of all the sources::
+    
+    lma.time
+    
+Just get indices of the sources in a 10 minute period::
+    
+    t0 = np.datetime64('2017-04-27T07:00:00', 'ns')  # times must be datetime64[ns]
+    t1 = np.datetime64('2017-04-27T07:10:00', 'ns')
+    ind, cnt = lma.limit(time=[t0, t1])
+
+The LMA data for these times::
+    
+    lma_subset = lma[ind[0]]
+
+Note this is returned (for now) as a Pandas Dataframe, not a new LMA object.
+
+.. warning:: 
+    
+    This is likely to be changed in the future!
+
+To restrict in time and space::
+    
+    ind, cnt = lma.limit(time=[t0, t1], lat=[33, 35], lon=[-87, -85])
+
 """
 
 import re
@@ -16,7 +49,7 @@ from pyltg.core.baseclass import Ltg
 def idxMatch(lst, text2match):
     """
     Simple helper to parse through a text list to find the index
-    that matches an input string
+    that matches an input string.
     """
 
     txtRE = re.compile(text2match, re.IGNORECASE)  # TODO: keyword to ignore case?
@@ -29,10 +62,41 @@ def idxMatch(lst, text2match):
 class LMA(Ltg):
     """
     Class to handle LMA source data.
+    
+    Many of the following are not attributes of the class, but
+    are columns in the underlying Dataframe. But, you can access them
+    as you would an attribute. There may also be others, depending on
+    the file read in.
+    
+    
+    Attributes
+    -----------
+        _data : Dataframe
+            The underlying data. A "real" attribute of the class.
+                
+        flashID : str
+            The flash ID
+        time : numpy.datetime64[ns]
+            The source time of the source. 
+        lat : numpy.float
+            The latitude of the source.
+        lon : numpy.float
+            The longitude of the source.            
+        alt : numpy.float
+            The altitude of the source.  
+        chi2 : numpy.float
+            The reduced :math:`\chi^2` value of the solution.
+        power : numpy.float
+            The power of the pulse, in dB
+        mask: str
+            The station mask. This is a hex code that corresponds to
+            which sensors participated in the solution.    
+    
     """
     def __init__(self, file):
         """
-        Initialization
+        Filename is required on initialization. This might be changed in
+        the future.
 
         Parameters
         ----------
@@ -53,9 +117,6 @@ class LMA(Ltg):
         LMA files come in different flavors and use different internal names
         for the same fields (sigh). This method provides some of the most used
         internal names and map them to a common name.
-
-        Returns
-        -------
 
         """
 
