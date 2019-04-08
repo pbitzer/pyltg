@@ -1,3 +1,13 @@
+
+"""
+Functions for various latitude/longitude operations.
+
+While pyproj is a great package, it doesn't seem to be able to handle
+Eaast-North-Up (ENU) coordinate systems. Among other things, this module 
+can.
+
+"""
+
 import numpy as np
 import pyproj
 
@@ -18,7 +28,8 @@ def rot_matrix_ecef2enu(lam, phi):
 
     Returns
     -------
-    A 3x3 numpy array defining the rotation matrix.
+    numpy array
+        A 3x3 numpy array defining the rotation matrix.
 
     """
     # Make the matrix below a little easier to type by defining a few variables:
@@ -39,7 +50,7 @@ def lla2enu(lats, lons, alts, center=None):
     Convert lat, lon, alt to ENU (East North Up) coordinates.
 
     If no center is given, use the average lat/lon/alt of input. This is the
-    sister function to `enu2lla`
+    sister function to :func:`enu2lla`
 
     Parameters
     ----------
@@ -55,7 +66,9 @@ def lla2enu(lats, lons, alts, center=None):
 
     Returns
     -------
-
+    numpy record array
+        An `n` element numpy record array, where `n` is the number of elements
+        in lats/lons/alts. The record arrays has the fields `x`, `y`, and `z`.
     """
 
     # Start by defining the projections for the conversion:
@@ -94,25 +107,25 @@ def enu2lla(x, y, z, center):
     """
     Convert from ENU (East North Up) coordinates to latitude/longitude/altitude.
 
-    Center is lat/lon/alt array like
-    x, y, z in km
-
-    This is the sister function to `lla2enu`
+    This is the sister function to :func:`lla2enu`
 
     Parameters
     ----------
     x : array-like
-        The east-west (x) coordinates of the data in km.
+        The east-west (x) coordinates of the data in kilometers.
     y : array-like
-        The north-south (y) coordinates of the data in km.
+        The north-south (y) coordinates of the data in kilometers.
     z : array-like
-        The up-down (z) coordinates of the data in km.
+        The up-down (z) coordinates of the data in kilometers.
     center : three element array-like
         The lat/lon/alt of the center of the ENU coordinate system.
+        Altitude is in kilometers.
 
     Returns
     -------
-
+    numpy record array
+        An `n` element numpy record array, where `n` is the number of elements
+        in x/y/z. The record arrays has the fields `lat`, `lon`, and `alt`.
     """
 
     # Start by defining the projections for the conversion:
