@@ -118,15 +118,17 @@ class ENTLN(Ltg):
             for chunk in reader:
                 # The first two columns are not relevant for us, and
                 # the "nullTime" field is largely redundant:
-                # AUTHOR NOTE: Never could get usecols to work to not have to do this
-                chunk.drop(['flashPortionHistoryID', 'flashPortionID', 'nullTime'], 
-                           axis=1, inplace=True)
+                # AUTHOR NOTE: Never could get usecols to work to not 
+                # have to do this
+                chunk.drop(['flashPortionHistoryID', 'flashPortionID', 
+                            'nullTime'], axis=1, inplace=True)
                
                 # Reinterpret the time string field as datetime64:
                 chunk.time = chunk.time.astype('datetime64')
                 
                 # change the ype field to a string of G or C (for CG/IC)
-                chunk.type.replace(to_replace={'0': 'G', '1': 'C'}, inplace=True)
+                chunk.type.replace(to_replace={'0': 'G', '1': 'C'}, 
+                                   inplace=True)
     
                 # todo: process the "extra: fields
                 # todo: change flashID to some sort of integer (from string)
