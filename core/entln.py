@@ -72,12 +72,14 @@ class ENTLN(Ltg):
         Parameters
         ----------
         filename: str
-            The file name to be read in.
+            The file name(s) to be read in. (Multiple filenames OK.)
         full : boolean, default: False
             If true, try to read in some of the solution attributes.
             Experimental.
 
         """
+        
+        # Define the columns/types, as they are in the file
         types = {'flashPortionHistoryID': np.int64, 'flashPortionID': str, 'flashID': str,
                  'nullTime': str, 'time': str,
                  'lat': np.float, 'lon': np.float, 'alt': np.float,
