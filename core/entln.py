@@ -173,7 +173,7 @@ def split_file(file):
     basename, ext2 = splitext(basename)
     
     def _write_file(new_name, data_to_write):
-        with gzip.open(new_filename+'.gz', 'wt') as _newf:
+        with gzip.open(new_name+'.gz', 'wt') as _newf:
             for item in new_data:
                 _newf.write("%s\n" % item)
     
