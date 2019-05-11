@@ -143,3 +143,69 @@ class ENTLN(Ltg):
         rawData.amp /= 1e3  # kA, please
         
         self._data = rawData
+        
+def split_file(file):
+    """
+    Split a ENI daily pulse file into hourly files.
+    
+    Earth Networks pulse files are absurdly large, since it is pulse level
+    data for the entire world for an entire day. This makes reading/moving/etc
+    these files more difficult than it should be. This routine will take
+    one of these files and split it into hourly files.
+    
+    Each of the new files will be placed in the same location as the original,
+    with an 2 character hour indicator appended. They will have the same
+    header line as the daily file, so all your current code should work on
+    them. 
+    
+    """
+    # 
+    
+    import gzip
+    from os.path import splitext
+    
+    curr_hr = -1
+    new_data = list()
+    
+    # Get basefilename with path, but w/o extension. 
+    # Assume multiple extensions (e.g., basename.csv.gz)
+    basename, ext1 = splitext(file)
+    basename, ext2 = splitext(basename)
+    
+    def _write_file(new_name, data_to_write):
+        with gzip.open(new_filename+'.gz', 'wt') as _newf:
+            for item in new_data:
+                _newf.write("%s\n" % item)
+    
+    # Open the file
+    with gzip.open(file, 'rt') as _f:
+        # Read the first line. We're going to put this at the top of 
+        # every new file.
+        hdr = _f.readline()
+        
+        # Now, we'll go about reading each line (sigh)
+        for line in _f:
+            this_date = line.split(',')[4]
+            _, hms = this_date.split('T')
+            this_hr = int(hms[0:2])
+            
+            if this_hr != curr_hr:
+                
+                # Write data to file, if there's something to write
+                if len(new_data) !=0:
+                    new_filename = basename + '_{:02}'.format(curr_hr) + ext2
+                    _write_file(new_filename, new_data)
+
+                # Start a new list to write to file.
+                curr_hr = int(this_hr)
+                new_data = list()
+                new_data.append(hdr)
+                
+            new_data.append(line)
+
+        # At the end, so check if we have data, and if so, write the data
+        # TODO: this code is exactly the same as above, so refactor
+        if len(new_data) !=0:
+            new_filename = basename + '_{:02}'.format(curr_hr) + ext2
+            _write_file(new_filename, new_data)
+            
