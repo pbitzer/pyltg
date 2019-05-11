@@ -72,18 +72,14 @@ class ENTLN(Ltg):
         Parameters
         ----------
         filename: str
-            The file name to be read in.
+            The file name(s) to be read in. (Multiple filenames OK.)
         full : boolean, default: False
             If true, try to read in some of the solution attributes.
             Experimental.
 
         """
-
-        if isinstance(filename, list):
-            if len(filename) > 1:
-                print('Multiple files not allowed yet')
-            filename = filename[0]
-
+        
+        # Define the columns/types, as they are in the file
         types = {'flashPortionHistoryID': np.int64, 'flashPortionID': str, 'flashID': str,
                  'nullTime': str, 'time': str,
                  'lat': np.float, 'lon': np.float, 'alt': np.float,
@@ -117,24 +113,28 @@ class ENTLN(Ltg):
         # We'll read the chunks into a list:
         rawData = list()
 
-        reader = pd.read_csv(filename, **pdArgs)
+        for this_file in np.atleast_1d(filename):
 
-        for chunk in reader:
-            # The first two columns are not relevant for us, and
-            # the "nullTime" field is largely redundant:
-            # AUTHOR NOTE: Never could get usecols to work to not have to do this
-            chunk.drop(['flashPortionHistoryID', 'flashPortionID', 'nullTime'], 
-                       axis=1, inplace=True)
-           
-            # Reinterpret the time string field as datetime64:
-            chunk.time = chunk.time.astype('datetime64')
-            
-            # change the ype field to a string of G or C (for CG/IC)
-            chunk.type.replace(to_replace={'0': 'G', '1': 'C'}, inplace=True)
-
-            # todo: process the "extra: fields
-            # todo: change flashID to some sort of integer (from string)
-            rawData.append(chunk)
+            reader = pd.read_csv(this_file, **pdArgs)
+    
+            for chunk in reader:
+                # The first two columns are not relevant for us, and
+                # the "nullTime" field is largely redundant:
+                # AUTHOR NOTE: Never could get usecols to work to not 
+                # have to do this
+                chunk.drop(['flashPortionHistoryID', 'flashPortionID', 
+                            'nullTime'], axis=1, inplace=True)
+               
+                # Reinterpret the time string field as datetime64:
+                chunk.time = chunk.time.astype('datetime64')
+                
+                # change the ype field to a string of G or C (for CG/IC)
+                chunk.type.replace(to_replace={'0': 'G', '1': 'C'}, 
+                                   inplace=True)
+    
+                # todo: process the "extra: fields
+                # todo: change flashID to some sort of integer (from string)
+                rawData.append(chunk)
         
         # Finally, make the "whole" dataframe
         rawData = pd.concat(rawData, ignore_index=True)
