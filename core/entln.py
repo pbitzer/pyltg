@@ -144,6 +144,7 @@ class ENTLN(Ltg):
         
         self._data = rawData
         
+        
 def split_file(file):
     """
     Split a ENI daily pulse file into hourly files.
@@ -154,9 +155,14 @@ def split_file(file):
     one of these files and split it into hourly files.
     
     Each of the new files will be placed in the same location as the original,
-    with an 2 character hour indicator appended. They will have the same
-    header line as the daily file, so all your current code should work on
-    them. 
+    with an 2 character hour indicator appended and gzipped. They will 
+    have the same header line as the daily file, so all your current code 
+    should work on them. 
+        
+    Parameters
+    ------------
+    file : str
+        The ENI pulse file.
     
     """
     # 
