@@ -67,13 +67,14 @@ class ENTLN(Ltg):
 
     def readFile(self, filename, full=False):
         """
-        Given a filename, load the data into the object.
+        Given a filename(s), load the data into the object.
 
         Parameters
         ----------
         filename: str
             The file name(s) to be read in. (Multiple filenames OK.)
-        full : boolean, default: False
+            For multiple filenames, use list-like type.
+        full : bool, default: False
             If true, try to read in some of the solution attributes.
             Experimental.
 
@@ -162,7 +163,8 @@ def split_file(file):
     Parameters
     ------------
     file : str
-        The ENI pulse file.
+        The ENI pulse file. Must be gzipped. Files are assumed to have
+        "two" extensions (e.g., `.csv.gz`)
 
     """
     #
