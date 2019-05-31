@@ -5,6 +5,7 @@ Functions for various operations on numpy arrays
 
 import numpy as np
 
+
 def rebin(arr, shape, scheme=None):
     """
     Given a input array, change the array such that the new array dimensions
@@ -44,7 +45,7 @@ def rebin(arr, shape, scheme=None):
                 
     """
     
-    from scipy.ndimage import zoom as sci_zoom # for upsample
+    from scipy.ndimage import zoom as sci_zoom  # for upsample
     
     # First, make sure we have the same number of dimensions:
     if arr.ndim != len(shape):
@@ -104,7 +105,7 @@ def rebin(arr, shape, scheme=None):
         pass  # here be dragons
         
     return new_arr
-   
+
 
 def xcorr(data1, data2, times1=None, times2=None):
     """
@@ -164,28 +165,32 @@ def xcorr(data1, data2, times1=None, times2=None):
     -------
     tuple : 
         - The lag of max correlation. A positive lag means the second array
-        is after the first.
+          is after the first.
         - The lags; this will be the index of the lags. The size of the array
           is `data1.size + data2.size-1`
         - The cross correlation: the value of the cross correlation for the lags
 
     Examples
     ---------
+    A basic usage example. We'll create a triangle wave, copy it, lag
+    the copy, and compute the lag::
 
-    import numpy as np
+        import numpy as np
 
-    # make a triangle wave
-    x1 = np.array([0, 0, 0, 0, 0, 0])
-    x2 = np.array(np.arange(10))+1
-    _x3 = np.array(np.arange(10))
-    x3 = _x3[::-1] # reverse the array
+        # make a triangle wave
+        x1 = np.array([0, 0, 0, 0, 0, 0])
+        x2 = np.array(np.arange(10))+1
+        _x3 = np.array(np.arange(10))
+        x3 = _x3[::-1]  # reverse the array
 
-    x = np.concatenate((x2, x3, x3))
+        x = np.concatenate((x2, x3, x3))
 
-    forced_lag = 4
-    y = np.roll(x, forced_lag)  # make another array that lags the orig
+        forced_lag = 4
+        y = np.roll(x, forced_lag)  # make another array that lags the orig
 
-    print(xcorr(x, y))  # should get value of forced_lag
+        max_lag, lags, corr =  xcorr(x, y)
+        print(max_lag)  # should get value of forced_lag
+
     """
 
     import scipy.signal as sig
@@ -218,7 +223,7 @@ def xcorr(data1, data2, times1=None, times2=None):
         times2 = times2 - min_t
         
         # Define the interpolations
-        interp_args = {'ext':0, 'k':5, 's':0}  # keywords for UnivariateSpline
+        interp_args = {'ext': 0, 'k': 5, 's': 0}  # keywords for UnivariateSpline
         
         intp1 = UnivariateSpline(times1, data1, **interp_args)
         intp2 = UnivariateSpline(times2, data2, **interp_args)
@@ -227,7 +232,7 @@ def xcorr(data1, data2, times1=None, times2=None):
         dt1 = np.min(np.diff(times1))
         dt2 = np.min(np.diff(times2))
         dist_per_lag = np.min((dt1, dt2))
-        dist_per_lag/= 10  # We are going to create a times array on a finer grid
+        dist_per_lag /= 10  # We are going to create a times array on a finer grid
                 
         times_common = np.arange(0, max_t-min_t, dist_per_lag)
         
@@ -253,4 +258,3 @@ def xcorr(data1, data2, times1=None, times2=None):
     loc = -lags[max_ind] * dist_per_lag
         
     return loc, lags, cross_corr
-    
