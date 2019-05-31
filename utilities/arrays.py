@@ -101,8 +101,6 @@ def rebin(arr, shape, scheme=None):
     else:
         # If none of these are true, then we must have non-integral factos
         raise ValueError("New shape must be integral factor of old shape")
-        print('hi')
-        pass  # here be dragons
         
     return new_arr
 
