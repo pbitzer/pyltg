@@ -1,6 +1,10 @@
 
 """
-This file is not documented. Use at your own risk!
+Implementation of a "file watcher" class, using PyQt5's QFileSystemWatcher.
+
+.. warning::
+    This file is not documented. Use at your own risk!
+
 # todo: add doc
 """
 

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 21 22:19:34 2017
-
-@author: Bitzer
+The base class that other classes in the package use.
 """
 
 import pandas as pd
@@ -64,7 +62,9 @@ class Ltg(object):
         """
         Add a field (i.e., column) to the underlying Dataframe
 
-        This isn't typically used outside of core developers.
+        .. note::
+            This isn't typically used outside of core developers.
+        
         Parameters
         ----------
         field_name : str
@@ -81,7 +81,9 @@ class Ltg(object):
         Add a record (i.e., row) to the Dataframe.
 
         This method will add some some data to the underlying Dataframe.
-        Caution: very little error catching is implemented.
+
+        .. warning::
+            Very little error catching is implemented.
 
         Parameters
         ----------
@@ -108,7 +110,8 @@ class Ltg(object):
         Limit the underlying data based on the inputs.
 
         To use this, pass in the data attributes of the data to be limited and
-        their range, e.g.,
+        their range, e.g.,::
+            
             Ltg.limit(lat = [30, 40])
 
         Parameters
