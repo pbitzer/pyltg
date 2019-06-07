@@ -27,7 +27,6 @@ def energy_colors(energies):
     _min_val = np.log10(min_val)
     _max_val = np.log10(max_val)
     _values = np.log10(energies)
-#    print(_values)
 
     # linear scale
     m = (255-0)/(_max_val-_min_val)
@@ -40,7 +39,6 @@ def energy_colors(energies):
     # Make it a byte for indexing
     scl_colors = np.uint8(scl_colors)
     
-#    import pdb; pdb.set_trace() 
     colors = np.zeros((len(_values), 3))
 
     nsteps = 256
@@ -50,16 +48,12 @@ def energy_colors(energies):
     n0 = 255
     n1 = 0
     greenV = np.uint8(n0 + (n1-n0) * scale)
-#    import pdb; pdb.set_trace() 
     
     colors[:, 0] = redV[scl_colors]
     colors[:, 1] = greenV[scl_colors]
     colors[:, 2] = blueV[scl_colors]
     
-    return colors
-    
-
-    pass        
+    return colors  
 
 def test_flash_id_rollover():
     rollover_files = [#'/Volumes/hammadev/GLM/20181117/OR_GLM-L2-LCFA_G16_s20183212148000_e20183212148200_c20183212148224.nc',
@@ -162,7 +156,6 @@ def filename2date(files):
     
     t0 = list()
     for _f in files:
-#        import pdb; pdb.set_trace()
         
         this_file = os.path.splitext(_f)[0]
         
@@ -377,7 +370,6 @@ class GLM():
             this_event.sort_values('time', inplace=True)
             this_group.sort_values('time', inplace=True)
             this_flash.sort_values('time', inplace=True)
-            
             
             # Finally, add "this" data
             events.append(this_event)
@@ -731,33 +723,6 @@ if __name__ == '__main__':
     dt = np.timedelta64(100, 'ms')
     frame_times = np.arange(this_grp.time.min(), this_grp.time.max()+dt, dt) 
 
-
-    
-    
-#    # test cc prob against SF
-#    import pandas as pd
-#    file = '/Users/bitzer/Downloads/sif_logistic_regression_test_data.csv'
-#    data = pd.read_csv(file)
-#    
-#    # match the columns expected here
-#    data.rename({'max_cont': 'n_contig', 
-#                 'max_delta_dist': 'delta_dist', 
-#                 'med_energy': 'med_energy', 
-#                 'max_energy': 'max_energy', 
-#                 'max_foot': 'max_area', 
-#                 'sum_energy': 'tot_energy'}, axis='columns', inplace=True)
-#
-#    # for now, drop columns we don't need
-#    data.drop(['efield', 'index', 'date', 'stroke_time_past_midnight'], axis=1, inplace=True)
-#
-#    
-#    pmb_prob = list()
-#    for this_row in data.iterrows():
-#        
-#        pmb_prob.append(logistic_cc(dict(this_row[1])))
-#    
-#    
-#    data['pmb_prob'] = np.array(pmb_prob)
         
     
     
