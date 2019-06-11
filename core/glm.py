@@ -1,8 +1,63 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Dec 27 16:58:49 2017
+Read in Geostationary Lightning Mapper (GLM) data.
 
-@author: bitzer
+This uses Eric Bruning's glmtools under the hood
+(https://github.com/deeplycloudy/glmtools).
+Things are organized a little differently here. The focus is here is more
+on class-based interaction with data, including reading multiple files
+at once.
+
+The operational feed for GLM data is missing important metrics that are
+important to atmospheric electricity researchers. One good example
+is the child count for each "grouping" of GLM data (e.g., the number
+of groups in a flash). That's handled here.
+
+The GLM class is essentially comprised of three
+:class:`Ltg <pyltg.core.baseclass.Ltg>` classes: one for events,
+one for groups, and one for flashes. These are attributes of the GLM class.
+There are methods to connect these, e.g., for a given flash (or flashes),
+get the child groups. Each grouping of GLM data has slightly different fields. The following are
+describes each of the these, which again, are attributes of the "main"
+GLM class.
+
+flashes (see :func:`_extract_flashes`)
+    :time: The time the flash starts
+    :time_last: The time the flash ends (i.e., the last time of the last group
+    :lat: Latitude of the radiance weighted centroid of the child groups
+    :lon: Longitude of the radiance weighted centroid of the child groups
+    :energy: Received optical energy of the flash (Joules)
+    :id: 32bit value used as flash identifier
+    :_orig_id: The original flash ID in the file (16 bit)
+    :area: Area of the flash (in km**2)
+    :quality_flag: Flag for data quality #todo: add the values
+    :alt: Meaningless and zero-d out.
+
+
+groups (see :func:`_extract_groups`)
+    :time: The time of the group
+    :lat: Latitude of the radiance weighted centroid of the child events
+    :lon: Longitude of the radiance weighted centroid of the child events
+    :energy: Received optical energy of the group (Joules)
+    :id: 32bit value used as group identifier
+    :_orig_id: The original group ID in the file (16 bit)
+    :area: Area of the group (in km**2)
+    :quality_flag: Flag for data quality #todo: add the values
+    :alt: Meaningless and zero-d out.
+
+events (see :func:`_extract_events`)
+    :time: The time of the event
+    :lat: Latitude of the event
+    :lon: Longitude of the event
+    :energy: Received optical energy of the group (Joules)
+    :id: 32bit value used as event identifier
+    :_orig_id: The original flash ID in the file (16 bit)
+    :alt: Meaningless and zero-d out.
+
+Still to be done:
+    - Get grandchild count for flashes (i.e, the events).
+    - Get event pixel address (in CCD coords)
+
 """
 
 import numpy as np
@@ -10,15 +65,30 @@ import pandas as pd
 import matplotlib.pyplot as plt 
 from matplotlib.collections import PolyCollection
 
-
 from glmtools.io.glm import GLMDataset
 
 from pyltg.core.baseclass import Ltg
 
-# todos:
-# get grandchild count for flashes (so, events)
 
 def energy_colors(energies):
+    """
+    Map the given GLM energies to a set of 256 colors.
+
+    Energies are scaled between 1 fJ and 50 fJ. #todo change this to keyword
+
+    .. note::
+        Right now, the only color scale available to use a yellow->red. Others
+        will be added later.
+
+    Parameters
+    ----------
+    energies n element array-like
+
+    Returns
+    -------
+    nx3 array of bytes, The last dimension corresponds to RGB
+
+    """
     # get RGB values that correspond to the energies.
 
     min_val = 1e-15
@@ -32,8 +102,8 @@ def energy_colors(energies):
     m = (255-0)/(_max_val-_min_val)
     b = 255.-m *_max_val
 
-
     scl_colors = m*_values+b
+
     # First, clip to bounds:
     scl_colors = np.clip(scl_colors, 0, 255)
     # Make it a byte for indexing
@@ -174,13 +244,27 @@ def filename2date(files):
 
 
 def _extract_groups(glmdata):
-    # Given a GLMDataset, extract groups and relevant attributes.
+    """
+    Given a GLMDataset, extract groups and relevant attributes.
+
+    Parameters
+    ----------
+    glmdata : GLMDataset
+        The GLMDataset to extract groups from.
+
+    Returns
+    -------
+    DataFrame :
+        Pandas DataFrame with GLM data fields.
+
+    """
+    #
     
     data = pd.DataFrame({
             'time': glmdata.dataset.group_time_offset, 
-            'lat' : glmdata.dataset.group_lat, 
-            'lon' : glmdata.dataset.group_lon, 
-            'energy' : glmdata.dataset.group_energy, 
+            'lat': glmdata.dataset.group_lat,
+            'lon': glmdata.dataset.group_lon,
+            'energy': glmdata.dataset.group_energy,
             'id': glmdata.dataset.group_id, 
             '_orig_id': glmdata.dataset.group_id,  # this the id in the file
             'parent_id': glmdata.dataset.group_parent_flash_id, 
@@ -189,13 +273,23 @@ def _extract_groups(glmdata):
             })
             
     # For consistency with the Ltg parent class, 
-    # we need altitude, but zero it out
+    # we need altitude, but zero it out since it's meaningless for GLM.
     data['alt'] = 0.0
     
     return data
         
 def _extract_events(glmdata):
-    # Given a GLMDataset, extract events and relevant attributes
+    """
+    Given a GLMDataset, extract events and relevant attributes
+
+    Parameters
+    ----------
+    glmdata
+
+    Returns
+    -------
+
+    """
     
     data = pd.DataFrame({
             'time': glmdata.dataset.event_time_offset, 
@@ -207,8 +301,8 @@ def _extract_events(glmdata):
             'parent_id': glmdata.dataset.event_parent_group_id
             })
             
-    # For consistency with the Ltg parent class, 
-    # we need altitude, but zero it out
+    # For consistency with the Ltg parent class,
+    # we need altitude, but zero it out since it's meaningless for GLM.
     data['alt'] = 0.0
     
     return data
@@ -216,16 +310,17 @@ def _extract_events(glmdata):
 def _extract_flashes(glmdata):
     # Given a GLMDataset, extract flashes and relevant attributes
     
-    # Beacuse flash ids are 16 bit, we can get rollover of the id
+    # Because flash ids are 16 bit, we can get rollover of the id
     # in the "middle" of a file. This can cause problems we reading in
-    # mulitple files. So, de-16bit integerize them.
+    # multiple files. So, de-16bit integer-ize them. We'll keep track
+    # of the original ID for traceability however.
     
     data = pd.DataFrame({
             'time': glmdata.dataset.flash_time_offset_of_first_event, 
             'time_last': glmdata.dataset.flash_time_offset_of_last_event, 
-            'lat' : glmdata.dataset.flash_lat, 
-            'lon' : glmdata.dataset.flash_lon, 
-            'energy' : glmdata.dataset.flash_energy, 
+            'lat': glmdata.dataset.flash_lat,
+            'lon': glmdata.dataset.flash_lon,
+            'energy': glmdata.dataset.flash_energy,
             'id': np.uint32(glmdata.dataset.flash_id), 
             '_orig_id': glmdata.dataset.flash_id,  # this the id in the file
             'area': glmdata.dataset.flash_area, 
@@ -233,7 +328,7 @@ def _extract_flashes(glmdata):
             })
             
     # For consistency with the Ltg parent class, 
-    # we need altitude, but zero it out
+    # we need altitude, but zero it out since it's meaningless for GLM.
     data['alt'] = 0.0
     
     return data
@@ -297,7 +392,7 @@ class GLM():
             The file to be read in.
 
         """
-        files = np.atleast_1d(files) #  allow scalar input
+        files = np.atleast_1d(files)  # allow scalar input
         
         events = list()
         groups = list()
@@ -308,6 +403,8 @@ class GLM():
         fl_id_ctr = 0
         
         for _file in files:
+            # Extract the GLM data. Since we'll handle the parent-child
+            # relationship, don't do it here.
             this_glm = GLMDataset(_file, calculate_parent_child=False)
             
             this_event = _extract_events(this_glm)
@@ -320,7 +417,6 @@ class GLM():
             # We also need to do the same to the group parent id:
             this_group.parent_id += np.uint32(2**16)
             
-#            import pdb; pdb.set_trace() 
             # We'll sort these by id. Makes counting children easier.
             this_event.sort_values('id', inplace=True)
             this_group.sort_values('id', inplace=True)
@@ -328,9 +424,9 @@ class GLM():
 
             # Modify the ids to unique values
             # When reading in multiple files, the id's will be replicated 
-            # (start over for each file). So, we'll modify the ids to unique values.
-            
-            
+            # (start over for each file). So, we'll modify the ids
+            # to unique values.
+
             # First, go ahead an subtract off the smallest id value for each.
             # Since we've sorted by id, this is trivial:
             min_ev_id = this_event['id'].iloc[0]
@@ -359,7 +455,7 @@ class GLM():
             gr_id_ctr += this_group['id'].iloc[-1]
             fl_id_ctr += this_flash['id'].iloc[-1]
           
-            # Count children######################
+            # Count children
             child_ev = _get_child_count(this_group, this_event)
             this_group['child_count'] = child_ev
 
@@ -380,13 +476,28 @@ class GLM():
         self.events = Ltg(pd.concat(events))
         self.groups = Ltg(pd.concat(groups))
         self.flashes = Ltg(pd.concat(flashes))
-        
-        
+
     def get_events(self, group_ids, combine=False):
-        # get the events of particular group(s)
-        # if combine if false, get back a list of dataframes the same length as group_ids
-        # if combine is true, get back a single dataframe with all events
-        
+        """
+        Get child events for a set of groups.
+
+        Parameters
+        ----------
+        group_ids : array-like
+            The IDs for the groups for which you want the events
+        combine: bool
+            If True, return a Pandas DataFrame with all events. If False,
+            return a list a DataFrames in which each element of the list
+            corresponds to the events for each group ID.
+
+        Returns
+        -------
+        Pandas DataFrame
+            By default, a list of DataFrames is returned. To get one DataFrame,
+            see `combine`.
+
+        """
+
         group_ids = np.atleast_1d(group_ids)
                 
         evs = [self.events[self.events.parent_id == _id] for _id in group_ids]
@@ -397,12 +508,30 @@ class GLM():
         return evs
         
     def get_groups(self, flash_ids, combine=False, events=False):
-        # get the groups of particular flash(es)
-        # if combine if false, get back a list of dataframes the same length as flash_ids
-        # if combine is true, get back a single dataframe with all events
-        # if events=True, also get children 
-        # if combine, then events are combined too. If not, list of events in flash
-        
+        """
+        Get the child groups for a set of flashes.
+
+        Parameters
+        ----------
+        flash_ids : array-like
+            The IDs for the flashes for which you want the groups
+        combine : bool
+            If True, return a Pandas DataFrame with all groups. If False,
+            return a list a DataFrames in which each element of the list
+            corresponds to the groups for each flash ID.
+        events : bool
+            If True, also get the child events. If `combine` is True, then
+            the events will be returned in one DataFrame. If not, get a
+            list of DataFrames, one for each group.
+
+        Returns
+        -------
+        Pandas DataFrame
+            By default, a list of DataFrames is returned. To get one DataFrame,
+            see `combine`. If `events` is True, then a tuple is returned, with
+            (groups, events).
+        """
+
         flash_ids = np.atleast_1d(flash_ids)
         
         grps = list()
@@ -418,20 +547,48 @@ class GLM():
             
         if combine:
             grps = pd.concat(grps)
-
             if events: 
                 evs = pd.concat(evs)
-        
         if events:
             return evs, grps
         else:
             return grps
-        
-        
+
     def plot_groups(self, groups, do_events=False, ax=None):
-        # groups to be plotted
-        # if do_events, plot each event in each group
-        # ax MPL Axes to be plotted in
+        """
+        Make a spatial plot of groups.
+
+        The plotting is done using the lons along the horizontal axis,
+        lats along the vertical axis.
+
+        .. note::
+            Future mod will allow plotting on a map.
+
+        Parameters
+        ----------
+        groups : array-like
+            The groups to be plotted.
+        do_events : bool
+            If True, then plot the individual child events too. Right now,
+            this is done in an approximate manner. The event footprint is
+            approximated by drawing a 0.04 dgree (roughly 4 km) box around
+            the event lat/lon. This roughly matches the GLM pixel size at nadir,
+            so event footprints off-nadir will not be not accurately
+            represented.
+        ax : MPL Axes
+            If given, the plot will be made in the provided Axes.
+
+        Returns
+        -------
+        dict
+            A dictionary of the individual MPL plot artists. Depending on the
+            arguments, you could have these:
+
+            :groups: MPL Line2D
+            :events_poly: MPL PolyCollection of event polygons
+            :events_pt: MPL Line 2D of event centroids.
+
+        """
         
         if ax is None:
             fig, ax = plt.subplots() 
@@ -439,11 +596,10 @@ class GLM():
         retVal = dict()  # we'll return a dictionary of plot artists
             
         # Get the groups:
-#        import pdb; pdb.set_trace() 
         if not do_events:
             # just make a scatter plot
             grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None', marker='.')
-            retVal['groups'] = grp_plt
+            retVal['groups'] = grp_plt[0]
         else:
             events = self.get_events(groups.id, combine=True)
             
@@ -610,8 +766,6 @@ def probability_cc(grps):
     prob = logistic_cc(stats)
     
     return prob
-    
-
 
 
 if __name__ == '__main__':
