@@ -249,11 +249,9 @@ def _get_child_count(parent, child):
     # First, define the bins to count in. Because of numpy's weirdness, we'll
     # need to add a bin that will be always empty:
     _bins = np.append(parent.id, parent.id.iloc[-1]+1)
-    try:
-        histo, bins = np.histogram(child.parent_id, bins=_bins)
-    except:
-        import pdb; pdb.set_trace() 
-        
+
+    histo, bins = np.histogram(child.parent_id, bins=_bins)
+
     return histo
 
 
