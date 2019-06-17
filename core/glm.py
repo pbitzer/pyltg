@@ -257,17 +257,6 @@ def _get_child_count(parent, child):
     return histo
 
 
-def _get_child_count_slow(parent, child):
-    
-    counts = list()
-    
-    for _id in parent.id:
-        cnt = np.count_nonzero(child.parent_id == _id)
-        counts.append(cnt)
-
-    return np.array(counts)
-
-    
 class GLM():
     """
     Class to handle GLM data.
