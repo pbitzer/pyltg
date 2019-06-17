@@ -129,7 +129,7 @@ def energy_colors(energies):
 
 def filename2date(files):
     # Take a filename and get the start time
-    import datetime
+    import datetime, os
     
     t0 = list()
     for _f in files:
