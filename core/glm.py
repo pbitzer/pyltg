@@ -90,7 +90,6 @@ def energy_colors(energies):
 
     """
     # get RGB values that correspond to the energies.
-
     min_val = 1e-15
     max_val = 5e-14
 
@@ -164,7 +163,6 @@ def _extract_groups(glmdata):
         Pandas DataFrame with GLM data fields.
 
     """
-    #
     
     data = pd.DataFrame({
             'time': glmdata.dataset.group_time_offset, 
@@ -183,7 +181,8 @@ def _extract_groups(glmdata):
     data['alt'] = 0.0
     
     return data
-        
+
+
 def _extract_events(glmdata):
     """
     Given a GLMDataset, extract events and relevant attributes
@@ -212,7 +211,8 @@ def _extract_events(glmdata):
     data['alt'] = 0.0
     
     return data
-        
+
+
 def _extract_flashes(glmdata):
     # Given a GLMDataset, extract flashes and relevant attributes
     
@@ -238,7 +238,8 @@ def _extract_flashes(glmdata):
     data['alt'] = 0.0
     
     return data
-    
+
+
 def _get_child_count(parent, child):
     # Given a parent and child dataset, find the number of children for
     # each parent.
@@ -252,6 +253,7 @@ def _get_child_count(parent, child):
         import pdb; pdb.set_trace() 
         
     return histo
+
 
 def _get_child_count_slow(parent, child):
     
