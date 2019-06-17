@@ -62,7 +62,7 @@ Still to be done:
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
 from glmtools.io.glm import GLMDataset
@@ -109,7 +109,7 @@ def energy_colors(energies):
     scl_colors = np.clip(scl_colors, 0, 255)
     # Make it a byte for indexing
     scl_colors = np.uint8(scl_colors)
-    
+
     colors = np.zeros((len(_values), 3))
 
     nsteps = 256
@@ -119,34 +119,34 @@ def energy_colors(energies):
     n0 = 255
     n1 = 0
     greenV = np.uint8(n0 + (n1-n0) * scale)
-    
+
     colors[:, 0] = redV[scl_colors]
     colors[:, 1] = greenV[scl_colors]
     colors[:, 2] = blueV[scl_colors]
-    
+
     return colors
 
 
 def filename2date(files):
     # Take a filename and get the start time
     import datetime, os
-    
+
     t0 = list()
     for _f in files:
-        
+
         this_file = os.path.splitext(_f)[0]
-        
+
         parts = this_file.split('_')
-        
+
         # Start time is in the third to last element:
         # check start with s?
 
         start = datetime.datetime.strptime(parts[-3][1:-1], '%Y%j%H%M%S')
         start = np.datetime64(start)
-        
+
         # do we need fractional seconds?
         t0.append(start)
-        
+
     return t0
 
 
@@ -165,23 +165,23 @@ def _extract_groups(glmdata):
         Pandas DataFrame with GLM data fields.
 
     """
-    
+
     data = pd.DataFrame({
-            'time': glmdata.dataset.group_time_offset, 
+            'time': glmdata.dataset.group_time_offset,
             'lat': glmdata.dataset.group_lat,
             'lon': glmdata.dataset.group_lon,
             'energy': glmdata.dataset.group_energy,
-            'id': glmdata.dataset.group_id, 
+            'id': glmdata.dataset.group_id,
             '_orig_id': glmdata.dataset.group_id,  # this the id in the file
-            'parent_id': glmdata.dataset.group_parent_flash_id, 
-            'area': glmdata.dataset.group_area, 
+            'parent_id': glmdata.dataset.group_parent_flash_id,
+            'area': glmdata.dataset.group_area,
             'quality_flag': glmdata.dataset.group_quality_flag
             })
-            
-    # For consistency with the Ltg parent class, 
+
+    # For consistency with the Ltg parent class,
     # we need altitude, but zero it out since it's meaningless for GLM.
     data['alt'] = 0.0
-    
+
     return data
 
 
@@ -197,55 +197,55 @@ def _extract_events(glmdata):
     -------
 
     """
-    
+
     data = pd.DataFrame({
-            'time': glmdata.dataset.event_time_offset, 
+            'time': glmdata.dataset.event_time_offset,
             'lat': glmdata.dataset.event_lat,
             'lon': glmdata.dataset.event_lon,
             'energy': glmdata.dataset.event_energy,
-            'id': glmdata.dataset.event_id, 
+            'id': glmdata.dataset.event_id,
             '_orig_id': glmdata.dataset.event_id,  # this the id in the file
             'parent_id': glmdata.dataset.event_parent_group_id
             })
-            
+
     # For consistency with the Ltg parent class,
     # we need altitude, but zero it out since it's meaningless for GLM.
     data['alt'] = 0.0
-    
+
     return data
 
 
 def _extract_flashes(glmdata):
     # Given a GLMDataset, extract flashes and relevant attributes
-    
+
     # Because flash ids are 16 bit, we can get rollover of the id
     # in the "middle" of a file. This can cause problems we reading in
     # multiple files. So, de-16bit integer-ize them. We'll keep track
     # of the original ID for traceability however.
-    
+
     data = pd.DataFrame({
-            'time': glmdata.dataset.flash_time_offset_of_first_event, 
-            'time_last': glmdata.dataset.flash_time_offset_of_last_event, 
+            'time': glmdata.dataset.flash_time_offset_of_first_event,
+            'time_last': glmdata.dataset.flash_time_offset_of_last_event,
             'lat': glmdata.dataset.flash_lat,
             'lon': glmdata.dataset.flash_lon,
             'energy': glmdata.dataset.flash_energy,
-            'id': np.uint32(glmdata.dataset.flash_id), 
+            'id': np.uint32(glmdata.dataset.flash_id),
             '_orig_id': glmdata.dataset.flash_id,  # this the id in the file
-            'area': glmdata.dataset.flash_area, 
+            'area': glmdata.dataset.flash_area,
             'quality_flag': glmdata.dataset.flash_quality_flag
             })
-            
-    # For consistency with the Ltg parent class, 
+
+    # For consistency with the Ltg parent class,
     # we need altitude, but zero it out since it's meaningless for GLM.
     data['alt'] = 0.0
-    
+
     return data
 
 
 def _get_child_count(parent, child):
     # Given a parent and child dataset, find the number of children for
     # each parent.
-        
+
     # First, define the bins to count in. Because of numpy's weirdness, we'll
     # need to add a bin that will be always empty:
     _bins = np.append(parent.id, parent.id.iloc[-1]+1)
@@ -259,7 +259,7 @@ class GLM():
     """
     Class to handle GLM data.
     """
-        
+
     def __init__(self, files):
         """
         Initialization
@@ -269,17 +269,17 @@ class GLM():
         files : str
             The file(s) to be read in.
         """
-                        
+
         self.events = None
         self.groups = None
         self.flashes = None
-        
+
         self.readFile(files)
 
     def readFile(self, files):
         """
         Read the given file(s).
-        
+
         Use GLMDataset to (mininally) read in the files, but we're going to extract
         things and put them in certain places.
 
@@ -290,37 +290,37 @@ class GLM():
 
         """
         files = np.atleast_1d(files)  # allow scalar input
-        
+
         events = list()
         groups = list()
         flashes = list()
-        
+
         ev_id_ctr = 0
         gr_id_ctr = 0
         fl_id_ctr = 0
-        
+
         for _file in files:
             # Extract the GLM data. Since we'll handle the parent-child
             # relationship, don't do it here.
             this_glm = GLMDataset(_file, calculate_parent_child=False)
-            
+
             this_event = _extract_events(this_glm)
             this_group = _extract_groups(this_glm)
             this_flash = _extract_flashes(this_glm)
-            
+
             # Inflate the 16 bit id to 32 bit to prevent rollover issues:
             this_flash.id += np.uint32(2**16)
-            
+
             # We also need to do the same to the group parent id:
             this_group.parent_id += np.uint32(2**16)
-            
+
             # We'll sort these by id. Makes counting children easier.
             this_event.sort_values('id', inplace=True)
             this_group.sort_values('id', inplace=True)
             this_flash.sort_values('id', inplace=True)
 
             # Modify the ids to unique values
-            # When reading in multiple files, the id's will be replicated 
+            # When reading in multiple files, the id's will be replicated
             # (start over for each file). So, we'll modify the ids
             # to unique values.
 
@@ -329,46 +329,46 @@ class GLM():
             min_ev_id = this_event['id'].iloc[0]
             min_gr_id = this_group['id'].iloc[0]
             min_fl_id = this_flash['id'].iloc[0]
-            
+
             this_event['id'] -= min_ev_id
             this_group['id'] -= min_gr_id
             this_flash['id'] -= min_fl_id
-            
+
             # Don't forget our parents!
             this_event['parent_id'] -= min_gr_id
             this_group['parent_id'] -= min_fl_id
-            
+
             # Next, add in an offset to get unique values
             this_event['id'] += ev_id_ctr
             this_group['id'] += gr_id_ctr
             this_flash['id'] += fl_id_ctr
-            
+
             # Offset the parents too:
             this_event['parent_id'] += gr_id_ctr
             this_group['parent_id'] += fl_id_ctr
-            
+
             # Next, update the counters
             ev_id_ctr += this_event['id'].iloc[-1]
             gr_id_ctr += this_group['id'].iloc[-1]
             fl_id_ctr += this_flash['id'].iloc[-1]
-          
+
             # Count children
             child_ev = _get_child_count(this_group, this_event)
             this_group['child_count'] = child_ev
 
             child_gr = _get_child_count(this_flash, this_group)
             this_flash['child_count'] = child_gr
-            
+
             # todo: add option to not sort by time
             this_event.sort_values('time', inplace=True)
             this_group.sort_values('time', inplace=True)
             this_flash.sort_values('time', inplace=True)
-            
+
             # Finally, add "this" data
             events.append(this_event)
             groups.append(this_group)
             flashes.append(this_flash)
-            
+
         # Put these as attributes of the class
         self.events = Ltg(pd.concat(events))
         self.groups = Ltg(pd.concat(groups))
@@ -396,14 +396,14 @@ class GLM():
         """
 
         group_ids = np.atleast_1d(group_ids)
-                
+
         evs = [self.events[self.events.parent_id == _id] for _id in group_ids]
-            
+
         if combine:
             evs = pd.concat(evs)
-        
+
         return evs
-        
+
     def get_groups(self, flash_ids, combine=False, events=False):
         """
         Get the child groups for a set of flashes.
@@ -430,21 +430,21 @@ class GLM():
         """
 
         flash_ids = np.atleast_1d(flash_ids)
-        
+
         grps = list()
         evs = list()
         for _id in flash_ids:
             this_grps = self.groups[self.groups.parent_id == _id]
             grps.append(this_grps)
-            
+
             if events:
                 evs.append(self.get_events(this_grps.id, combine=True))
-            
+
         # TODO: We can get all the events at once, if we have the ids as a list
-            
+
         if combine:
             grps = pd.concat(grps)
-            if events: 
+            if events:
                 evs = pd.concat(evs)
         if events:
             return evs, grps
@@ -486,12 +486,12 @@ class GLM():
             :events_pt: MPL Line 2D of event centroids.
 
         """
-        
+
         if ax is None:
-            fig, ax = plt.subplots() 
-            
+            fig, ax = plt.subplots()
+
         retVal = dict()  # we'll return a dictionary of plot artists
-            
+
         # Get the groups:
         if not do_events:
             # just make a scatter plot
@@ -499,9 +499,9 @@ class GLM():
             retVal['groups'] = grp_plt[0]
         else:
             events = self.get_events(groups.id, combine=True)
-            
+
             centers = np.vstack((events.lon, events.lat)).T
-            
+
             # assume 8 km square pixels for simplicity
             offsets = np.ones((4, len(events), 2))
             EVENT_EDGE = 0.04
@@ -509,23 +509,23 @@ class GLM():
             offsets[1, :, 0] = -EVENT_EDGE  # move ll, x
             offsets[2, :, 0] =  EVENT_EDGE  # move lr, x
             offsets[3, :, 0] =  EVENT_EDGE  # move ur, x
-            
+
             offsets[0, :, 1] =  EVENT_EDGE  # move ul, y
             offsets[1, :, 1] = -EVENT_EDGE  # move ll, y
             offsets[2, :, 1] = -EVENT_EDGE  # move lr, y
             offsets[3, :, 1] =  EVENT_EDGE  # move ur, y
-            
+
             verts = centers + offsets
             verts = np.swapaxes(verts, 0, 1)
-            
+
             colors = energy_colors(events.energy.values)/255
-            
+
             poly = PolyCollection(verts, edgecolors='black', facecolors=colors)
             _ = ax.add_collection(poly)
             retVal['events_poly'] = poly
-            
+
             # overplot event centers
             ev_plt = ax.plot(events.lon, events.lat, linestyle='None', marker='.', color='black')
             retVal['events_pt'] = ev_plt[0]
-            
+
         return retVal
