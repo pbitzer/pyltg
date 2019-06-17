@@ -86,7 +86,9 @@ def energy_colors(energies):
 
     Returns
     -------
-    nx3 array of bytes, The last dimension corresponds to RGB
+    array :
+        nx3 NumPy array of bytes. The last dimension corresponds to RGB
+        values.
 
     """
     # get RGB values that correspond to the energies.
@@ -245,7 +247,7 @@ def _get_child_count(parent, child):
     # each parent.
         
     # First, define the bins to count in. Because of numpy's weirdness, we'll
-    # need to add a bin, that will be always empty:    
+    # need to add a bin that will be always empty:
     _bins = np.append(parent.id, parent.id.iloc[-1]+1)
     try:
         histo, bins = np.histogram(child.parent_id, bins=_bins)
