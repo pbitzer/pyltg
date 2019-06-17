@@ -101,7 +101,7 @@ def energy_colors(energies):
 
     # linear scale
     m = (255-0)/(_max_val-_min_val)
-    b = 255.-m *_max_val
+    b = 255.-m * _max_val
 
     scl_colors = m*_values+b
 
@@ -200,9 +200,9 @@ def _extract_events(glmdata):
     
     data = pd.DataFrame({
             'time': glmdata.dataset.event_time_offset, 
-            'lat' : glmdata.dataset.event_lat, 
-            'lon' : glmdata.dataset.event_lon, 
-            'energy' : glmdata.dataset.event_energy, 
+            'lat': glmdata.dataset.event_lat,
+            'lon': glmdata.dataset.event_lon,
+            'energy': glmdata.dataset.event_energy,
             'id': glmdata.dataset.event_id, 
             '_orig_id': glmdata.dataset.event_id,  # this the id in the file
             'parent_id': glmdata.dataset.event_parent_group_id
@@ -507,15 +507,15 @@ class GLM():
             # assume 8 km square pixels for simplicity
             offsets = np.ones((4, len(events), 2))
             EVENT_EDGE = 0.04
-            offsets[0, :, 0] = -EVENT_EDGE # move ul, x
-            offsets[1, :, 0] = -EVENT_EDGE # move ll, x
-            offsets[2, :, 0] =  EVENT_EDGE # move lr, x
-            offsets[3, :, 0] =  EVENT_EDGE # move ur, x
+            offsets[0, :, 0] = -EVENT_EDGE  # move ul, x
+            offsets[1, :, 0] = -EVENT_EDGE  # move ll, x
+            offsets[2, :, 0] =  EVENT_EDGE  # move lr, x
+            offsets[3, :, 0] =  EVENT_EDGE  # move ur, x
             
-            offsets[0, :, 1] =  EVENT_EDGE # move ul, y
-            offsets[1, :, 1] = -EVENT_EDGE # move ll, y
-            offsets[2, :, 1] = -EVENT_EDGE # move lr, y
-            offsets[3, :, 1] =  EVENT_EDGE # move ur, y
+            offsets[0, :, 1] =  EVENT_EDGE  # move ul, y
+            offsets[1, :, 1] = -EVENT_EDGE  # move ll, y
+            offsets[2, :, 1] = -EVENT_EDGE  # move lr, y
+            offsets[3, :, 1] =  EVENT_EDGE  # move ur, y
             
             verts = centers + offsets
             verts = np.swapaxes(verts, 0, 1)
