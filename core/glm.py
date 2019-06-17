@@ -123,29 +123,8 @@ def energy_colors(energies):
     colors[:, 1] = greenV[scl_colors]
     colors[:, 2] = blueV[scl_colors]
     
-    return colors  
+    return colors
 
-#
-#def _intersect(arr1, arr2):
-#    # Return the indices of the arrays of which the values are common.
-#    
-#    # Cobbled from numpy's intersect1d. This functionality was added in
-#    # v1.15, but in casa we're behind in versions, it's replicated here.
-#    # Future mod will enforce numpy 1.15, rendering this redundant.1
-#    
-#    aux = np.concatenate((arr1, arr2))
-#    
-#    aux_sort_indices = np.argsort(aux, kind='mergesort')
-#    
-#    aux = aux[aux_sort_indices]
-#    
-#    mask = aux[1:] == aux[:-1]
-#    # int1d = aux[:-1][mask]  # these are the common values
-#    
-#    arr1_indices = aux_sort_indices[:-1][mask]
-#    arr2_indices = aux_sort_indices[1:][mask] - arr1.size
-#    
-#    return arr1_indices, arr2_indices
 
 def filename2date(files):
     # Take a filename and get the start time
