@@ -5,7 +5,6 @@ Functions for various operations on numpy arrays
 
 import numpy as np
 
-
 def rebin(arr, shape, scheme=None):
     """
     Given a input array, change the array such that the new array dimensions
