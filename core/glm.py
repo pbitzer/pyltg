@@ -260,7 +260,7 @@ class GLM():
     Class to handle GLM data.
     """
 
-    def __init__(self, files):
+    def __init__(self, files=None):
         """
         Initialization
 
@@ -273,8 +273,8 @@ class GLM():
         self.events = None
         self.groups = None
         self.flashes = None
-
-        self.readFile(files)
+        if files is not None:
+            self.readFile(files)
 
     def readFile(self, files):
         """
