@@ -451,7 +451,8 @@ class GLM():
         else:
             return grps
 
-    def plot_groups(self, groups, do_events=False, ax=None):
+    def plot_groups(self, groups, do_events=False, ax=None, latlon=True, 
+                    marker_group='.', 
         """
         Make a spatial plot of groups.
 
@@ -486,16 +487,29 @@ class GLM():
             :events_pt: MPL Line 2D of event centroids.
 
         """
+        import cartopy.crs as ccrs
+
 
         if ax is None:
-            fig, ax = plt.subplots()
+            if latlon:
+                fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.Mercator()))
+            else:
+                fig, ax = plt.subplots() 
+            
+        # There doesn't seem to be "none" for transform, and the plotting
+        # calls are similar whether or not we do a map. So, make a 
+        # dict with transform if we have it, otherwise leave it empty.
+        trans_kw = {}
+        if latlon:
+            trans_kw['transform'] = ccrs.PlateCarree()
 
         retVal = dict()  # we'll return a dictionary of plot artists
 
         # Get the groups:
         if not do_events:
             # just make a scatter plot
-            grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None', marker='.')
+            grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None', 
+                              marker=marker_group, **trans_kw)
             retVal['groups'] = grp_plt[0]
         else:
             events = self.get_events(groups.id, combine=True)
