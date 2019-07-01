@@ -464,6 +464,13 @@ class GLM():
 
         .. note::
             Future mod will allow plotting on a map.
+            
+        .. warning:
+            Right now, event polygons are only approximate. They are plotted
+            as polygons with vertices 0.04 degrees from event the center.
+            This is fine at GLM nadir, but becomes progressively worse as you
+            look toward the edges of the FOV. Future work will try to 
+            geolocate the events edges.
 
         Parameters
         ----------
@@ -478,6 +485,24 @@ class GLM():
             represented.
         ax : MPL Axes
             If given, the plot will be made in the provided Axes.
+        latlon: bool
+            If True, make a map using Cartopy. If True and `ax` is given, 
+            then it is assumed that `ax` is a Cartopy GeoAxes or GeoAxesSubplot
+        gridlines: bool
+            If `latlon` is True and this is True, then gridlines will be 
+            be plotted
+        marker_group: str
+            The MPL marker used when plotting only groups 
+            i.e, when `do_events=False`.
+        colors_events: str
+            The color scheme used to scale the event colors by the energy.
+            Hard coded for now to be the yellow scheme!
+        fill_events: bool
+            If True, fill the events with a color related to `colors_events`.
+            If False, just draw an empty polygon.
+        event_centers: bool
+            If True, plot a marker at the center of each event.
+
 
         Returns
         -------
@@ -487,7 +512,8 @@ class GLM():
 
             :groups: MPL Line2D
             :events_poly: MPL PolyCollection of event polygons
-            :events_pt: MPL Line 2D of event centroids.
+            :events_pt: MPL Line 2D of event centroids
+            :gridlines: Cartopy Gridliner
 
         """
         import cartopy.crs as ccrs
