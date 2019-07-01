@@ -451,10 +451,10 @@ class GLM():
         else:
             return grps
 
-    def plot_groups(self, groups, do_events=False, ax=None, latlon=True, 
-                    gridlines=True, 
-                    marker_group='.', 
-                    colors_events='yellow', fill_events=True, 
+    def plot_groups(self, groups, do_events=False, ax=None, latlon=True,
+                    gridlines=True,
+                    marker_group='.',
+                    colors_events='yellow', fill_events=True,
                     event_centers=True):
         """
         Make a spatial plot of groups.
@@ -464,12 +464,12 @@ class GLM():
 
         .. note::
             Future mod will allow plotting on a map.
-            
+
         .. warning:
             Right now, event polygons are only approximate. They are plotted
             as polygons with vertices 0.04 degrees from event the center.
             This is fine at GLM nadir, but becomes progressively worse as you
-            look toward the edges of the FOV. Future work will try to 
+            look toward the edges of the FOV. Future work will try to
             geolocate the events edges.
 
         Parameters
@@ -486,13 +486,13 @@ class GLM():
         ax : MPL Axes
             If given, the plot will be made in the provided Axes.
         latlon: bool
-            If True, make a map using Cartopy. If True and `ax` is given, 
+            If True, make a map using Cartopy. If True and `ax` is given,
             then it is assumed that `ax` is a Cartopy GeoAxes or GeoAxesSubplot
         gridlines: bool
-            If `latlon` is True and this is True, then gridlines will be 
+            If `latlon` is True and this is True, then gridlines will be
             be plotted
         marker_group: str
-            The MPL marker used when plotting only groups 
+            The MPL marker used when plotting only groups
             i.e, when `do_events=False`.
         colors_events: str
             The color scheme used to scale the event colors by the energy.
@@ -523,10 +523,10 @@ class GLM():
             if latlon:
                 fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.Mercator()))
             else:
-                fig, ax = plt.subplots() 
-            
+                fig, ax = plt.subplots()
+
         # There doesn't seem to be "none" for transform, and the plotting
-        # calls are similar whether or not we do a map. So, make a 
+        # calls are similar whether or not we do a map. So, make a
         # dict with transform if we have it, otherwise leave it empty.
         trans_kw = {}
         if latlon:
@@ -537,7 +537,7 @@ class GLM():
         # Get the groups:
         if not do_events:
             # just make a scatter plot
-            grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None', 
+            grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None',
                               marker=marker_group, **trans_kw)
             retVal['groups'] = grp_plt[0]
         else:
@@ -570,16 +570,16 @@ class GLM():
             poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
             _ = ax.add_collection(poly)
             # If nothing else is plotted, then the x/y limits be MPL's default.
-            # In this case, we'll want to set the x/y limits. 
+            # In this case, we'll want to set the x/y limits.
             # Otherwise, just add the events to the current view
             if (ax.get_xlim() == (0.0, 1.0)) & (ax.get_ylim() == (0.0, 1.0)):
                 ax.autoscale()
             retVal['events_poly'] = poly
-            
+
             if event_centers:
-                ev_plt = ax.plot(events.lon, events.lat, linestyle='None', 
+                ev_plt = ax.plot(events.lon, events.lat, linestyle='None',
                                  marker='.', color='black', **trans_kw)
-                retVal['events_pt'] = ev_plt[0]               
+                retVal['events_pt'] = ev_plt[0]
 
         if latlon & gridlines:
             gl = ax.gridlines(draw_labels=True, linestyle=':')
