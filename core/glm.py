@@ -544,9 +544,11 @@ class GLM():
             poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
             _ = ax.add_collection(poly)
             retVal['events_poly'] = poly
+            
+            if event_centers:
+                ev_plt = ax.plot(events.lon, events.lat, linestyle='None', 
+                                 marker='.', color='black', **trans_kw)
+                retVal['events_pt'] = ev_plt[0]               
 
-            # overplot event centers
-            ev_plt = ax.plot(events.lon, events.lat, linestyle='None', marker='.', color='black')
-            retVal['events_pt'] = ev_plt[0]
 
         return retVal
