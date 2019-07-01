@@ -534,7 +534,7 @@ class GLM():
 
             colors = energy_colors(events.energy.values)/255
 
-            poly = PolyCollection(verts, edgecolors='black', facecolors=colors)
+            poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
             _ = ax.add_collection(poly)
             retVal['events_poly'] = poly
 
