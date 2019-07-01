@@ -555,5 +555,8 @@ class GLM():
                                  marker='.', color='black', **trans_kw)
                 retVal['events_pt'] = ev_plt[0]               
 
+        if latlon & gridlines:
+            gl = ax.gridlines(draw_labels=True, linestyle=':')
+            retVal['gridlines'] = gl
 
         return retVal
