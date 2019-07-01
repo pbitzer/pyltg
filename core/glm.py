@@ -452,7 +452,10 @@ class GLM():
             return grps
 
     def plot_groups(self, groups, do_events=False, ax=None, latlon=True, 
+                    gridlines=True, 
                     marker_group='.', 
+                    colors_events='yellow', fill_events=True, 
+                    event_centers=True):
         """
         Make a spatial plot of groups.
 
