@@ -543,6 +543,11 @@ class GLM():
 
             poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
             _ = ax.add_collection(poly)
+            # If nothing else is plotted, then the x/y limits be MPL's default.
+            # In this case, we'll want to set the x/y limits. 
+            # Otherwise, just add the events to the current view
+            if (ax.get_xlim() == (0.0, 1.0)) & (ax.get_ylim() == (0.0, 1.0)):
+                ax.autoscale()
             retVal['events_poly'] = poly
             
             if event_centers:
