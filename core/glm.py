@@ -535,7 +535,11 @@ class GLM():
             verts = centers + offsets
             verts = np.swapaxes(verts, 0, 1)
 
-            colors = energy_colors(events.energy.values)/255
+            if fill_events:
+                # todo: here, we would pick a different color scheme
+                colors = energy_colors(events.energy.values)/255
+            else:
+                colors='none'
 
             poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
             _ = ax.add_collection(poly)
