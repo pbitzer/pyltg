@@ -462,9 +462,6 @@ class GLM():
         The plotting is done using the lons along the horizontal axis,
         lats along the vertical axis.
 
-        .. note::
-            Future mod will allow plotting on a map.
-
         .. warning:
             Right now, event polygons are only approximate. They are plotted
             as polygons with vertices 0.04 degrees from event the center.
@@ -479,9 +476,9 @@ class GLM():
         do_events : bool
             If True, then plot the individual child events too. Right now,
             this is done in an approximate manner. The event footprint is
-            approximated by drawing a 0.04 dgree (roughly 4 km) box around
-            the event lat/lon. This roughly matches the GLM pixel size at nadir,
-            so event footprints off-nadir will not be not accurately
+            approximated by drawing a 0.04 degree (roughly 4 km) box around
+            the event lat/lon. This roughly matches the GLM pixel size at 
+            nadir, so event footprints off-nadir will not be not accurately
             represented.
         ax : MPL Axes
             If given, the plot will be made in the provided Axes.
@@ -489,8 +486,8 @@ class GLM():
             If True, make a map using Cartopy. If True and `ax` is given,
             then it is assumed that `ax` is a Cartopy GeoAxes or GeoAxesSubplot
         gridlines: bool
-            If `latlon` is True and this is True, then gridlines will be
-            be plotted
+            If True, then gridlines will be added to the plot. Only valid
+            if `latlon` is also True.
         marker_group: str
             The MPL marker used when plotting only groups
             i.e, when `do_events=False`.
@@ -502,7 +499,6 @@ class GLM():
             If False, just draw an empty polygon.
         event_centers: bool
             If True, plot a marker at the center of each event.
-
 
         Returns
         -------
