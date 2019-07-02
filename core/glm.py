@@ -451,15 +451,23 @@ class GLM():
         else:
             return grps
 
-    def plot_groups(self, groups, do_events=False, ax=None):
+    def plot_groups(self, groups, do_events=False, ax=None, latlon=True,
+                    gridlines=True,
+                    marker_group='.',
+                    colors_events='yellow', fill_events=True,
+                    event_centers=True):
         """
         Make a spatial plot of groups.
 
         The plotting is done using the lons along the horizontal axis,
         lats along the vertical axis.
 
-        .. note::
-            Future mod will allow plotting on a map.
+        .. warning:
+            Right now, event polygons are only approximate. They are plotted
+            as polygons with vertices 0.04 degrees from event the center.
+            This is fine at GLM nadir, but becomes progressively worse as you
+            look toward the edges of the FOV. Future work will try to
+            geolocate the events edges.
 
         Parameters
         ----------
@@ -468,12 +476,29 @@ class GLM():
         do_events : bool
             If True, then plot the individual child events too. Right now,
             this is done in an approximate manner. The event footprint is
-            approximated by drawing a 0.04 dgree (roughly 4 km) box around
-            the event lat/lon. This roughly matches the GLM pixel size at nadir,
-            so event footprints off-nadir will not be not accurately
+            approximated by drawing a 0.04 degree (roughly 4 km) box around
+            the event lat/lon. This roughly matches the GLM pixel size at 
+            nadir, so event footprints off-nadir will not be not accurately
             represented.
         ax : MPL Axes
             If given, the plot will be made in the provided Axes.
+        latlon: bool
+            If True, make a map using Cartopy. If True and `ax` is given,
+            then it is assumed that `ax` is a Cartopy GeoAxes or GeoAxesSubplot
+        gridlines: bool
+            If True, then gridlines will be added to the plot. Only valid
+            if `latlon` is also True.
+        marker_group: str
+            The MPL marker used when plotting only groups
+            i.e, when `do_events=False`.
+        colors_events: str
+            The color scheme used to scale the event colors by the energy.
+            Hard coded for now to be the yellow scheme!
+        fill_events: bool
+            If True, fill the events with a color related to `colors_events`.
+            If False, just draw an empty polygon.
+        event_centers: bool
+            If True, plot a marker at the center of each event.
 
         Returns
         -------
@@ -483,19 +508,33 @@ class GLM():
 
             :groups: MPL Line2D
             :events_poly: MPL PolyCollection of event polygons
-            :events_pt: MPL Line 2D of event centroids.
+            :events_pt: MPL Line 2D of event centroids
+            :gridlines: Cartopy Gridliner
 
         """
+        import cartopy.crs as ccrs
+
 
         if ax is None:
-            fig, ax = plt.subplots()
+            if latlon:
+                fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.Mercator()))
+            else:
+                fig, ax = plt.subplots()
+
+        # There doesn't seem to be "none" for transform, and the plotting
+        # calls are similar whether or not we do a map. So, make a
+        # dict with transform if we have it, otherwise leave it empty.
+        trans_kw = {}
+        if latlon:
+            trans_kw['transform'] = ccrs.PlateCarree()
 
         retVal = dict()  # we'll return a dictionary of plot artists
 
         # Get the groups:
         if not do_events:
             # just make a scatter plot
-            grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None', marker='.')
+            grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None',
+                              marker=marker_group, **trans_kw)
             retVal['groups'] = grp_plt[0]
         else:
             events = self.get_events(groups.id, combine=True)
@@ -518,14 +557,29 @@ class GLM():
             verts = centers + offsets
             verts = np.swapaxes(verts, 0, 1)
 
-            colors = energy_colors(events.energy.values)/255
+            if fill_events:
+                # todo: here, we would pick a different color scheme
+                colors = energy_colors(events.energy.values)/255
+            else:
+                colors = 'none'
 
-            poly = PolyCollection(verts, edgecolors='black', facecolors=colors)
+            poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
             _ = ax.add_collection(poly)
+            # If nothing else is plotted, then the x/y limits be MPL's default.
+            # In this case, we'll want to set the x/y limits.
+            # Otherwise, just add the events to the current view
+            if (ax.get_xlim() == (0.0, 1.0)) & (ax.get_ylim() == (0.0, 1.0)):
+                ax.autoscale()
             retVal['events_poly'] = poly
 
-            # overplot event centers
-            ev_plt = ax.plot(events.lon, events.lat, linestyle='None', marker='.', color='black')
-            retVal['events_pt'] = ev_plt[0]
+            if event_centers:
+                ev_plt = ax.plot(events.lon, events.lat, linestyle='None',
+                                 marker='.', color='black', markersize=0.5,
+                                 **trans_kw)
+                retVal['events_pt'] = ev_plt[0]
+
+        if latlon & gridlines:
+            gl = ax.gridlines(draw_labels=True, linestyle=':')
+            retVal['gridlines'] = gl
 
         return retVal
