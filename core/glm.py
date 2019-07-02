@@ -578,7 +578,8 @@ class GLM():
 
             if event_centers:
                 ev_plt = ax.plot(events.lon, events.lat, linestyle='None',
-                                 marker='.', color='black', **trans_kw)
+                                 marker='.', color='black', markersize=0.5,
+                                 **trans_kw)
                 retVal['events_pt'] = ev_plt[0]
 
         if latlon & gridlines:
