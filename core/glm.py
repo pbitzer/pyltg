@@ -565,7 +565,7 @@ class GLM():
                 # todo: here, we would pick a different color scheme
                 colors = energy_colors(events.energy.values)/255
             else:
-                colors='none'
+                colors = 'none'
 
             poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
             _ = ax.add_collection(poly)
