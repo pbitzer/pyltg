@@ -514,7 +514,6 @@ class GLM():
         """
         import cartopy.crs as ccrs
 
-
         if ax is None:
             if latlon:
                 fig, ax = plt.subplots(subplot_kw=dict(projection=ccrs.Mercator()))
