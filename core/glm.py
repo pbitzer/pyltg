@@ -303,12 +303,12 @@ class GLM():
             # Extract the GLM data. Since we'll handle the parent-child
             # relationship, don't do it here.
             this_glm = GLMDataset(_file, calculate_parent_child=False)
-            
+
             # Some GLM files have no data. Check for these cases:
             # todo: do we need to check groups and flashes too?
             if this_glm.dataset.dims['number_of_events'] == 0:
                 continue
-            
+
             this_event = _extract_events(this_glm)
             this_group = _extract_groups(this_glm)
             this_flash = _extract_flashes(this_glm)
@@ -373,7 +373,7 @@ class GLM():
             events.append(this_event)
             groups.append(this_group)
             flashes.append(this_flash)
-        
+
         if not events:
             # todo: related to above todo, do we need to check groups/flashes?
             print('No GLM data found in files. Class will have no data.')
@@ -486,7 +486,7 @@ class GLM():
             If True, then plot the individual child events too. Right now,
             this is done in an approximate manner. The event footprint is
             approximated by drawing a 0.04 degree (roughly 4 km) box around
-            the event lat/lon. This roughly matches the GLM pixel size at 
+            the event lat/lon. This roughly matches the GLM pixel size at
             nadir, so event footprints off-nadir will not be not accurately
             represented.
         ax : MPL Axes
