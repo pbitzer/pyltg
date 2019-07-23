@@ -145,6 +145,22 @@ class LMA(Ltg):
 
         """
 
+        files = np.atleast_1d(files)
+        
+        sources = list()
+        
+        for _file in files:
+            if h5py.is_hdf5(_file):
+                this_data = self._readHDF(_file)
+            else:
+                # Assume it's ASCII
+                this_data = self._readASCII(_file)
+            
+            sources.append(this_data)
+        
+        self._data = pd.concat(sources)
+    
+        self._data.alt /= 1e3  # convert to km
         
     def _readASCII(self, file):
         """
