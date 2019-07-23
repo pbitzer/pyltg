@@ -167,15 +167,15 @@ def _extract_groups(glmdata):
     """
 
     data = pd.DataFrame({
-        'time': glmdata.dataset.group_time_offset,
-        'lat': glmdata.dataset.group_lat,
-        'lon': glmdata.dataset.group_lon,
-        'energy': glmdata.dataset.group_energy,
-        'id': glmdata.dataset.group_id,
-        '_orig_id': glmdata.dataset.group_id,  # this the id in the file
-        'parent_id': glmdata.dataset.group_parent_flash_id,
-        'area': glmdata.dataset.group_area,
-        'quality_flag': glmdata.dataset.group_quality_flag
+        'time': glmdata.dataset.group_time_offset.values,
+        'lat': glmdata.dataset.group_lat.values,
+        'lon': glmdata.dataset.group_lon.values,
+        'energy': glmdata.dataset.group_energy.values,
+        'id': glmdata.dataset.group_id.values,
+        '_orig_id': glmdata.dataset.group_id.values,  # this the id in the file
+        'parent_id': glmdata.dataset.group_parent_flash_id.values,
+        'area': glmdata.dataset.group_area.values,
+        'quality_flag': glmdata.dataset.group_quality_flag.values
         })
 
     # For consistency with the Ltg parent class,
@@ -199,13 +199,13 @@ def _extract_events(glmdata):
     """
 
     data = pd.DataFrame({
-        'time': glmdata.dataset.event_time_offset,
-        'lat': glmdata.dataset.event_lat,
-        'lon': glmdata.dataset.event_lon,
-        'energy': glmdata.dataset.event_energy,
-        'id': glmdata.dataset.event_id,
-        '_orig_id': glmdata.dataset.event_id,  # this the id in the file
-        'parent_id': glmdata.dataset.event_parent_group_id
+        'time': glmdata.dataset.event_time_offset.values,
+        'lat': glmdata.dataset.event_lat.values,
+        'lon': glmdata.dataset.event_lon.values,
+        'energy': glmdata.dataset.event_energy.values,
+        'id': glmdata.dataset.event_id.values,
+        '_orig_id': glmdata.dataset.event_id.values,  # this the id in the file
+        'parent_id': glmdata.dataset.event_parent_group_id.values
         })
 
     # For consistency with the Ltg parent class,
@@ -224,15 +224,15 @@ def _extract_flashes(glmdata):
     # of the original ID for traceability however.
 
     data = pd.DataFrame({
-        'time': glmdata.dataset.flash_time_offset_of_first_event,
-        'time_last': glmdata.dataset.flash_time_offset_of_last_event,
-        'lat': glmdata.dataset.flash_lat,
-        'lon': glmdata.dataset.flash_lon,
-        'energy': glmdata.dataset.flash_energy,
-        'id': np.uint32(glmdata.dataset.flash_id),
-        '_orig_id': glmdata.dataset.flash_id,  # this the id in the file
-        'area': glmdata.dataset.flash_area,
-        'quality_flag': glmdata.dataset.flash_quality_flag
+        'time': glmdata.dataset.flash_time_offset_of_first_event.values,
+        'time_last': glmdata.dataset.flash_time_offset_of_last_event.values,
+        'lat': glmdata.dataset.flash_lat.values,
+        'lon': glmdata.dataset.flash_lon.values,
+        'energy': glmdata.dataset.flash_energy.values,
+        'id': np.uint32(glmdata.dataset.flash_id.values),
+        '_orig_id': glmdata.dataset.flash_id.values,  # this the id in the file
+        'area': glmdata.dataset.flash_area.values,
+        'quality_flag': glmdata.dataset.flash_quality_flag.values
         })
 
     # For consistency with the Ltg parent class,
@@ -313,49 +313,53 @@ class GLM():
             this_group = _extract_groups(this_glm)
             this_flash = _extract_flashes(this_glm)
 
-            # Inflate the 16 bit id to 32 bit to prevent rollover issues:
-            this_flash.id += np.uint32(2**16)
+            # We're going to modify the IDs a bit, since they can rollover.
+            # The flash IDs seem to rollover at 2**16-1, but the group IDs
+            # are MUCH weirder. The rollover seems to happen somewhere
+            # between 2**29 and 2**30. To get reasonable IDs, we're going to 
+            # modify these IDs too.
+            
+            # First, get a "mapping" from the current IDs to unique values:
+            new_flash_id = np.arange(len(this_flash))
+            
+            # Now, update the IDs to this new mapping:
+            this_flash.id = new_flash_id
+                        
+            # Update the parent IDs for the groups:
+            # Get a dictionary to map the values:
+            flash_id_map = dict(zip(this_flash._orig_id.values, new_flash_id))
 
-            # We also need to do the same to the group parent id:
-            this_group.parent_id += np.uint32(2**16)
+            new_id = this_group.parent_id.map(flash_id_map.get)
+            # Note: mapping is MUCH faster than using the DataFrame.replace method
+            
+            this_group.parent_id = new_id
 
+            # Now, do the same thing with group/events:
+            new_group_id = np.arange(len(this_group))
+            this_group.id = new_group_id
+            
+            group_id_map = dict(zip(this_group._orig_id.values, new_group_id))
+            
+            this_event.parent_id = this_event.parent_id.map(group_id_map.get)
+                        
             # We'll sort these by id. Makes counting children easier.
             this_event.sort_values('id', inplace=True)
             this_group.sort_values('id', inplace=True)
             this_flash.sort_values('id', inplace=True)
 
-            # Modify the ids to unique values
-            # When reading in multiple files, the id's will be replicated
-            # (start over for each file). So, we'll modify the ids
-            # to unique values.
-
-            # First, go ahead an subtract off the smallest id value for each.
-            # Since we've sorted by id, this is trivial:
-            min_ev_id = this_event['id'].iloc[0]
-            min_gr_id = this_group['id'].iloc[0]
-            min_fl_id = this_flash['id'].iloc[0]
-
-            this_event['id'] -= min_ev_id
-            this_group['id'] -= min_gr_id
-            this_flash['id'] -= min_fl_id
-
-            # Don't forget our parents!
-            this_event['parent_id'] -= min_gr_id
-            this_group['parent_id'] -= min_fl_id
-
-            # Next, add in an offset to get unique values
+            # Add in an offset to get unique values across files
             this_event['id'] += ev_id_ctr
             this_group['id'] += gr_id_ctr
             this_flash['id'] += fl_id_ctr
 
-            # Offset the parents too:
+            # Offset the parent IDs for the children too:
             this_event['parent_id'] += gr_id_ctr
             this_group['parent_id'] += fl_id_ctr
 
             # Next, update the counters
-            ev_id_ctr += this_event['id'].iloc[-1]
-            gr_id_ctr += this_group['id'].iloc[-1]
-            fl_id_ctr += this_flash['id'].iloc[-1]
+            ev_id_ctr = this_event['id'].iloc[-1]+1
+            gr_id_ctr = this_group['id'].iloc[-1]+1
+            fl_id_ctr = this_flash['id'].iloc[-1]+1
 
             # Count children
             child_ev = _get_child_count(this_group, this_event)
