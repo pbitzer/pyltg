@@ -204,10 +204,59 @@ class LMA(Ltg):
         date = np.datetime64(date[2] + '-' + date[0] + '-' + date[1], 'ns')
         
         secs = self.time.astype('int64').astype('timedelta64[s]')
+    def _readHDF(self, file):
+        """
+        Read in a HDF5 Flash sorted files, of the type lmatools produces.
+        
+        This will only work if there's only one "events" dataset in 
+        the file. Nominally, this is how one would interact with lmatools, 
+        however, so it shouldn't be a big problem.
+        
+        """        
+        with h5py.File(f, 'r') as h5_file:
+            
+            keys = list(h5_file.keys())
+            
+            if keys.count('events') !=1:
+                print('Invalid file - wrong number of "events" datasets')
+                # todo: raise exception
+                return
+            
+            # We need to get the group, then extrct the dataset
+            # AND, get the "value" to get it into an array
+            ev_dataset = list(h5_file.get('events').values())[0]
+            
+            data = ev_dataset.value
+            
+            t0_char = ev_dataset.attrs['start_time'].decode()
+        
+        # Make this a DataFrame before we start manipulating:
+        data = pd.DataFrame(data)
+        
+        
+        # First, drop columns we don't need:
+        if 'charge' in data.columns:
+            data.drop(columns='charge', inplace=True)
+        
+        # todo: Do we need to map the column names to ones used by Ltg Class?
+        
+        # Next, the time is saved as an offset to a epoch. We don't want
+        # this, we want an absolute time. Things are slightly
+        # complicated because this epoch is saved as a string. 
+        
+        # The field are separated by "L". Extract the year, month, day.
+        # We're going to assume the times are relative to midnight to this day.
+        _start = t0_char.split('L')
+        
+        # todo: refactor this ... largely the same as in readFile
+        date = np.datetime64('{1:0>4}-{3:0>2}-{5:0>2}'.format(*_start), 'ns')
+        secs = data.time.astype('int64').astype('timedelta64[s]')
         secs = secs.astype('timedelta64[ns]')
-        secsFrac = ((self.time % 1)*1e9).astype('timedelta64[ns]')
+        secsFrac = ((data.time % 1)*1e9).astype('timedelta64[ns]')
         
         # Cast the times as datetime64[ns]....
-        self._data.time = date + secs + secsFrac
+        data.time = date + secs + secsFrac
+        
+        return data    
+        
 
-        self._data.alt /= 1e3  # convert to km
