@@ -167,15 +167,15 @@ def _extract_groups(glmdata):
     """
 
     data = pd.DataFrame({
-        'time': glmdata.dataset.group_time_offset,
-        'lat': glmdata.dataset.group_lat,
-        'lon': glmdata.dataset.group_lon,
-        'energy': glmdata.dataset.group_energy,
-        'id': glmdata.dataset.group_id,
-        '_orig_id': glmdata.dataset.group_id,  # this the id in the file
-        'parent_id': glmdata.dataset.group_parent_flash_id,
-        'area': glmdata.dataset.group_area,
-        'quality_flag': glmdata.dataset.group_quality_flag
+        'time': glmdata.dataset.group_time_offset.values,
+        'lat': glmdata.dataset.group_lat.values,
+        'lon': glmdata.dataset.group_lon.values,
+        'energy': glmdata.dataset.group_energy.values,
+        'id': glmdata.dataset.group_id.values,
+        '_orig_id': glmdata.dataset.group_id.values,  # this the id in the file
+        'parent_id': glmdata.dataset.group_parent_flash_id.values,
+        'area': glmdata.dataset.group_area.values,
+        'quality_flag': glmdata.dataset.group_quality_flag.values
         })
 
     # For consistency with the Ltg parent class,
@@ -199,13 +199,13 @@ def _extract_events(glmdata):
     """
 
     data = pd.DataFrame({
-        'time': glmdata.dataset.event_time_offset,
-        'lat': glmdata.dataset.event_lat,
-        'lon': glmdata.dataset.event_lon,
-        'energy': glmdata.dataset.event_energy,
-        'id': glmdata.dataset.event_id,
-        '_orig_id': glmdata.dataset.event_id,  # this the id in the file
-        'parent_id': glmdata.dataset.event_parent_group_id
+        'time': glmdata.dataset.event_time_offset.values,
+        'lat': glmdata.dataset.event_lat.values,
+        'lon': glmdata.dataset.event_lon.values,
+        'energy': glmdata.dataset.event_energy.values,
+        'id': glmdata.dataset.event_id.values,
+        '_orig_id': glmdata.dataset.event_id.values,  # this the id in the file
+        'parent_id': glmdata.dataset.event_parent_group_id.values
         })
 
     # For consistency with the Ltg parent class,
@@ -224,15 +224,15 @@ def _extract_flashes(glmdata):
     # of the original ID for traceability however.
 
     data = pd.DataFrame({
-        'time': glmdata.dataset.flash_time_offset_of_first_event,
-        'time_last': glmdata.dataset.flash_time_offset_of_last_event,
-        'lat': glmdata.dataset.flash_lat,
-        'lon': glmdata.dataset.flash_lon,
-        'energy': glmdata.dataset.flash_energy,
-        'id': np.uint32(glmdata.dataset.flash_id),
-        '_orig_id': glmdata.dataset.flash_id,  # this the id in the file
-        'area': glmdata.dataset.flash_area,
-        'quality_flag': glmdata.dataset.flash_quality_flag
+        'time': glmdata.dataset.flash_time_offset_of_first_event.values,
+        'time_last': glmdata.dataset.flash_time_offset_of_last_event.values,
+        'lat': glmdata.dataset.flash_lat.values,
+        'lon': glmdata.dataset.flash_lon.values,
+        'energy': glmdata.dataset.flash_energy.values,
+        'id': np.uint32(glmdata.dataset.flash_id.values),
+        '_orig_id': glmdata.dataset.flash_id.values,  # this the id in the file
+        'area': glmdata.dataset.flash_area.values,
+        'quality_flag': glmdata.dataset.flash_quality_flag.values
         })
 
     # For consistency with the Ltg parent class,
