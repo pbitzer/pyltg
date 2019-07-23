@@ -287,5 +287,3 @@ class LMA(Ltg):
         data.time = date + secs + secsFrac
         
         return data    
-        
-
