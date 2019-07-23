@@ -313,49 +313,53 @@ class GLM():
             this_group = _extract_groups(this_glm)
             this_flash = _extract_flashes(this_glm)
 
-            # Inflate the 16 bit id to 32 bit to prevent rollover issues:
-            this_flash.id += np.uint32(2**16)
+            # We're going to modify the IDs a bit, since they can rollover.
+            # The flash IDs seem to rollover at 2**16-1, but the group IDs
+            # are MUCH weirder. The rollover seems to happen somewhere
+            # between 2**29 and 2**30. To get reasonable IDs, we're going to 
+            # modify these IDs too.
+            
+            # First, get a "mapping" from the current IDs to unique values:
+            new_flash_id = np.arange(len(this_flash))
+            
+            # Now, update the IDs to this new mapping:
+            this_flash.id = new_flash_id
+                        
+            # Update the parent IDs for the groups:
+            # Get a dictionary to map the values:
+            flash_id_map = dict(zip(this_flash._orig_id.values, new_flash_id))
 
-            # We also need to do the same to the group parent id:
-            this_group.parent_id += np.uint32(2**16)
+            new_id = this_group.parent_id.map(flash_id_map.get)
+            # Note: mapping is MUCH faster than using the DataFrame.replace method
+            
+            this_group.parent_id = new_id
 
+            # Now, do the same thing with group/events:
+            new_group_id = np.arange(len(this_group))
+            this_group.id = new_group_id
+            
+            group_id_map = dict(zip(this_group._orig_id.values, new_group_id))
+            
+            this_event.parent_id = this_event.parent_id.map(group_id_map.get)
+                        
             # We'll sort these by id. Makes counting children easier.
             this_event.sort_values('id', inplace=True)
             this_group.sort_values('id', inplace=True)
             this_flash.sort_values('id', inplace=True)
 
-            # Modify the ids to unique values
-            # When reading in multiple files, the id's will be replicated
-            # (start over for each file). So, we'll modify the ids
-            # to unique values.
-
-            # First, go ahead an subtract off the smallest id value for each.
-            # Since we've sorted by id, this is trivial:
-            min_ev_id = this_event['id'].iloc[0]
-            min_gr_id = this_group['id'].iloc[0]
-            min_fl_id = this_flash['id'].iloc[0]
-
-            this_event['id'] -= min_ev_id
-            this_group['id'] -= min_gr_id
-            this_flash['id'] -= min_fl_id
-
-            # Don't forget our parents!
-            this_event['parent_id'] -= min_gr_id
-            this_group['parent_id'] -= min_fl_id
-
-            # Next, add in an offset to get unique values
+            # Add in an offset to get unique values across files
             this_event['id'] += ev_id_ctr
             this_group['id'] += gr_id_ctr
             this_flash['id'] += fl_id_ctr
 
-            # Offset the parents too:
+            # Offset the parent IDs for the children too:
             this_event['parent_id'] += gr_id_ctr
             this_group['parent_id'] += fl_id_ctr
 
             # Next, update the counters
-            ev_id_ctr += this_event['id'].iloc[-1]
-            gr_id_ctr += this_group['id'].iloc[-1]
-            fl_id_ctr += this_flash['id'].iloc[-1]
+            ev_id_ctr = this_event['id'].iloc[-1]+1
+            gr_id_ctr = this_group['id'].iloc[-1]+1
+            fl_id_ctr = this_flash['id'].iloc[-1]+1
 
             # Count children
             child_ev = _get_child_count(this_group, this_event)
