@@ -71,13 +71,17 @@ class LMA(Ltg):
     the file read in.
     
     
+    .. warning:
+        If you read in multiple flash HDF files, the flash IDs are not
+        handled correctly (yet).
+    
     Attributes
     -----------
         _data : Dataframe
             The underlying data. A "real" attribute of the class.
                 
         flashID : str
-            The flash ID
+            The flash ID. Note this is only present if you have a "flash" file
         time : numpy.datetime64[ns]
             The source time of the source. 
         lat : numpy.float
