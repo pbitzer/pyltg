@@ -43,6 +43,8 @@ import re
 import numpy as np
 import pandas as pd
 
+import h5py
+
 from pyltg.core.baseclass import Ltg
 
 
@@ -69,13 +71,17 @@ class LMA(Ltg):
     the file read in.
     
     
+    .. warning:
+        If you read in multiple flash HDF files, the flash IDs are not
+        handled correctly (yet).
+    
     Attributes
     -----------
         _data : Dataframe
             The underlying data. A "real" attribute of the class.
                 
         flashID : str
-            The flash ID
+            The flash ID. Note this is only present if you have a "flash" file
         time : numpy.datetime64[ns]
             The source time of the source. 
         lat : numpy.float
@@ -93,22 +99,21 @@ class LMA(Ltg):
             which sensors participated in the solution.    
     
     """
-    def __init__(self, file):
+    def __init__(self, files=None):
         """
-        Filename is required on initialization. This might be changed in
-        the future.
 
         Parameters
         ----------
-        file : str
-            The file to be read in.
+        files : str
+            The file(s) to be read in.
         """
         
         super().__init__()  # initialize the inherited baseclass
         
-        self.__colNames()  # mapping from columns in the file to object props
-        
-        self.readFile(file)
+        self.__colNames()  # mapping from columns in the file to object props         # todo: this doesn't need to be a instance method. Either make it class method, or make it a function.
+
+        if files is not None:
+            self.readFile(files)
                 
     def __colNames(self):
         """
@@ -135,7 +140,7 @@ class LMA(Ltg):
                 'P(dBW)': 'power',
                 'mask': 'mask'}
 
-    def readFile(self, file):
+    def readFile(self, files):
         """
         Read the given file.
 
@@ -145,44 +150,59 @@ class LMA(Ltg):
             The file to be read in.
 
         """
+
+        files = np.atleast_1d(files)
+        
+        sources = list()
+        
+        for _file in files:
+            if h5py.is_hdf5(_file):
+                this_data = self._readHDF(_file)
+            else:
+                # Assume it's ASCII
+                this_data = self._readASCII(_file)
+            
+            sources.append(this_data)
+        
+        self._data = pd.concat(sources)
+    
+        self._data.alt /= 1e3  # convert to km
+        
+    def _readASCII(self, file):
+        """
+        Read in an LMA source ASCII file. 
+        
+        """
+        
         from itertools import islice
         import gzip
-
-        # First, we need to find where in the file the data starts
-        # This means we need to open the file and read in the beginning
-        
-        # NOTE: Is it better (faster) to find the data start as we read in?
-        if isinstance(file, list):
-            if len(file) > 1:
-                print('Multiple files not allowed yet. Reading first.')
-            file = file[0]
 
         with gzip.open(file, 'rt') as thisFile:
             possHdr = list(islice(thisFile, 100))
                      
-        # This should contain at least the whole header for (most) LMA files.
-        # Parse it to find the start of the data
+            # This should contain at least the whole header for (most) LMA files.
+            # Parse it to find the start of the data
+                
+            dataText = r"^.*\*+.*data.*\*+.*"        
+            dataLine = idxMatch(possHdr, dataText)[0]
+           
+            # Everything up to this line is the header
+            hdr = possHdr[0:dataLine]
             
-        dataText = r"^.*\*+.*data.*\*+.*"        
-        dataLine = idxMatch(possHdr, dataText)[0]
-       
-        # Everything up to this line is the header
-        hdr = possHdr[0:dataLine]
+            # Now, find the line that defines the columns in the file
+            colText = "Data:"
+            colLine = idxMatch(hdr, r"^"+colText)
+            
+            # We have the line, strip it down so that we only have the cols
+            fileCols = hdr[colLine[0]][:-1]  # strip trailing /n
+            fileCols = fileCols.split(colText)[1]  # strip the column line marker
+            fileCols = fileCols.split(',')  # Make it a list
+            fileCols = [_.strip() for _ in fileCols]  # remove trailing/leading space
         
-        # Now, find the line that defines the columns in the file
-        colText = "Data:"
-        colLine = idxMatch(hdr, r"^"+colText)
-        
-        # We have the line, strip it down so that we only have the cols
-        fileCols = hdr[colLine[0]][:-1]  # strip trailing /n
-        fileCols = fileCols.split(colText)[1]  # strip the column line marker
-        fileCols = fileCols.split(',')  # Make it a list
-        fileCols = [_.strip() for _ in fileCols]  # remove trailing/leading space
-    
-        colNames = [self.colNames[col] for col in fileCols]
-        
+            colNames = [self.colNames[col] for col in fileCols]
+            
         # Get the data and assign the column names
-        self._data = pd.read_csv(file, compression='gzip', header=None,
+        this_src = pd.read_csv(file, compression='gzip', header=None,
                                  delim_whitespace=True,
                                  skiprows=dataLine+1, names=colNames)
         
@@ -204,11 +224,66 @@ class LMA(Ltg):
 
         date = np.datetime64(date[2] + '-' + date[0] + '-' + date[1], 'ns')
         
-        secs = self.time.astype('int64').astype('timedelta64[s]')
+        secs = this_src.time.astype('int64').astype('timedelta64[s]')
         secs = secs.astype('timedelta64[ns]')
-        secsFrac = ((self.time % 1)*1e9).astype('timedelta64[ns]')
+        secsFrac = ((this_src.time % 1)*1e9).astype('timedelta64[ns]')
         
         # Cast the times as datetime64[ns]....
-        self._data.time = date + secs + secsFrac
-
-        self._data.alt /= 1e3  # convert to km
+        this_src.time = date + secs + secsFrac
+        
+        return this_src
+        
+    def _readHDF(self, file):
+        """
+        Read in a HDF5 Flash sorted files, of the type lmatools produces.
+        
+        This will only work if there's only one "events" dataset in 
+        the file. Nominally, this is how one would interact with lmatools, 
+        however, so it shouldn't be a big problem.
+        
+        """        
+        with h5py.File(file, 'r') as h5_file:
+            
+            keys = list(h5_file.keys())
+            
+            if keys.count('events') !=1:
+                print('Invalid file - wrong number of "events" datasets')
+                # todo: raise exception
+                return
+            
+            # We need to get the group, then extrct the dataset
+            # AND, get the "value" to get it into an array
+            ev_dataset = list(h5_file.get('events').values())[0]
+            
+            data = ev_dataset.value
+            
+            t0_char = ev_dataset.attrs['start_time'].decode()
+        
+        # Make this a DataFrame before we start manipulating:
+        data = pd.DataFrame(data)
+        
+        
+        # First, drop columns we don't need:
+        if 'charge' in data.columns:
+            data.drop(columns='charge', inplace=True)
+        
+        # todo: Do we need to map the column names to ones used by Ltg Class?
+        
+        # Next, the time is saved as an offset to a epoch. We don't want
+        # this, we want an absolute time. Things are slightly
+        # complicated because this epoch is saved as a string. 
+        
+        # The field are separated by "L". Extract the year, month, day.
+        # We're going to assume the times are relative to midnight to this day.
+        _start = t0_char.split('L')
+        
+        # todo: refactor this ... largely the same as in readFile
+        date = np.datetime64('{1:0>4}-{3:0>2}-{5:0>2}'.format(*_start), 'ns')
+        secs = data.time.astype('int64').astype('timedelta64[s]')
+        secs = secs.astype('timedelta64[ns]')
+        secsFrac = ((data.time % 1)*1e9).astype('timedelta64[ns]')
+        
+        # Cast the times as datetime64[ns]....
+        data.time = date + secs + secsFrac
+        
+        return data    
