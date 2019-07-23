@@ -144,44 +144,43 @@ class LMA(Ltg):
             The file to be read in.
 
         """
+
+        
+    def _readASCII(self, file):
+        """
+        Read in an LMA source ASCII file. 
+        
+        """
+        
         from itertools import islice
         import gzip
-
-        # First, we need to find where in the file the data starts
-        # This means we need to open the file and read in the beginning
-        
-        # NOTE: Is it better (faster) to find the data start as we read in?
-        if isinstance(file, list):
-            if len(file) > 1:
-                print('Multiple files not allowed yet. Reading first.')
-            file = file[0]
 
         with gzip.open(file, 'rt') as thisFile:
             possHdr = list(islice(thisFile, 100))
                      
-        # This should contain at least the whole header for (most) LMA files.
-        # Parse it to find the start of the data
+            # This should contain at least the whole header for (most) LMA files.
+            # Parse it to find the start of the data
+                
+            dataText = r"^.*\*+.*data.*\*+.*"        
+            dataLine = idxMatch(possHdr, dataText)[0]
+           
+            # Everything up to this line is the header
+            hdr = possHdr[0:dataLine]
             
-        dataText = r"^.*\*+.*data.*\*+.*"        
-        dataLine = idxMatch(possHdr, dataText)[0]
-       
-        # Everything up to this line is the header
-        hdr = possHdr[0:dataLine]
+            # Now, find the line that defines the columns in the file
+            colText = "Data:"
+            colLine = idxMatch(hdr, r"^"+colText)
+            
+            # We have the line, strip it down so that we only have the cols
+            fileCols = hdr[colLine[0]][:-1]  # strip trailing /n
+            fileCols = fileCols.split(colText)[1]  # strip the column line marker
+            fileCols = fileCols.split(',')  # Make it a list
+            fileCols = [_.strip() for _ in fileCols]  # remove trailing/leading space
         
-        # Now, find the line that defines the columns in the file
-        colText = "Data:"
-        colLine = idxMatch(hdr, r"^"+colText)
-        
-        # We have the line, strip it down so that we only have the cols
-        fileCols = hdr[colLine[0]][:-1]  # strip trailing /n
-        fileCols = fileCols.split(colText)[1]  # strip the column line marker
-        fileCols = fileCols.split(',')  # Make it a list
-        fileCols = [_.strip() for _ in fileCols]  # remove trailing/leading space
-    
-        colNames = [self.colNames[col] for col in fileCols]
-        
+            colNames = [self.colNames[col] for col in fileCols]
+            
         # Get the data and assign the column names
-        self._data = pd.read_csv(file, compression='gzip', header=None,
+        this_src = pd.read_csv(file, compression='gzip', header=None,
                                  delim_whitespace=True,
                                  skiprows=dataLine+1, names=colNames)
         
@@ -203,7 +202,15 @@ class LMA(Ltg):
 
         date = np.datetime64(date[2] + '-' + date[0] + '-' + date[1], 'ns')
         
-        secs = self.time.astype('int64').astype('timedelta64[s]')
+        secs = this_src.time.astype('int64').astype('timedelta64[s]')
+        secs = secs.astype('timedelta64[ns]')
+        secsFrac = ((this_src.time % 1)*1e9).astype('timedelta64[ns]')
+        
+        # Cast the times as datetime64[ns]....
+        this_src.time = date + secs + secsFrac
+        
+        return this_src
+        
     def _readHDF(self, file):
         """
         Read in a HDF5 Flash sorted files, of the type lmatools produces.
