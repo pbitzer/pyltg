@@ -242,7 +242,7 @@ class LMA(Ltg):
         however, so it shouldn't be a big problem.
         
         """        
-        with h5py.File(f, 'r') as h5_file:
+        with h5py.File(file, 'r') as h5_file:
             
             keys = list(h5_file.keys())
             
