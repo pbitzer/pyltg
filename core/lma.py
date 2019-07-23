@@ -93,22 +93,21 @@ class LMA(Ltg):
             which sensors participated in the solution.    
     
     """
-    def __init__(self, file):
+    def __init__(self, files=None):
         """
-        Filename is required on initialization. This might be changed in
-        the future.
 
         Parameters
         ----------
-        file : str
-            The file to be read in.
+        files : str
+            The file(s) to be read in.
         """
         
         super().__init__()  # initialize the inherited baseclass
         
-        self.__colNames()  # mapping from columns in the file to object props
-        
-        self.readFile(file)
+        self.__colNames()  # mapping from columns in the file to object props         # todo: this doesn't need to be a instance method. Either make it class method, or make it a function.
+
+        if files is not None:
+            self.readFile(files)
                 
     def __colNames(self):
         """
@@ -135,7 +134,7 @@ class LMA(Ltg):
                 'P(dBW)': 'power',
                 'mask': 'mask'}
 
-    def readFile(self, file):
+    def readFile(self, files):
         """
         Read the given file.
 
