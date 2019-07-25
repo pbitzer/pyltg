@@ -164,7 +164,7 @@ class LMA(Ltg):
             
             sources.append(this_data)
         
-        self._data = pd.concat(sources)
+        self._data = pd.concat(sources, ignore_index=True)
     
         self._data.alt /= 1e3  # convert to km
         
