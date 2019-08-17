@@ -51,7 +51,7 @@ from pyltg.core.baseclass import Ltg
 def flash_sort(files,
                ctr_lat=None, ctr_lon=None,
                logpath=None, savepath=None,
-               stations=[6, 21], chi2=[0, 2.0], alt=[0, 20000],
+               stations=(6, 21), chi2=(0, 2.0), alt=(0, 20000),
                distance=3000.0,
                thresh_duration=3.0, thresh_critical_time=0.15,
                merge_critical_time=0.5, mask_length=8,
