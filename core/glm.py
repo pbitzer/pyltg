@@ -102,6 +102,74 @@ def _convert_lm_time(lm_time):
     
     return times
 
+def read_lm_file(files, keepall=False):
+    """
+    Read Lockheed Martin netCDF file with events and groups. 
+    
+    As part of PLT, files were generated using LM's Matlab code that contains
+    Level 1 events and groups. (Both L1b and L1 events could be present).
+    
+    
+    IDs (event, group) are not guaranteed to be unque if reading multiple files
+    
+    Parameters
+    ----------
+    files: str or sequence of string
+        The files to read in
+    keepall: bool
+        If True, keep all events in the file, even ones that were filtered.
+        Note that only 1b events are geo-navigated. 
+        
+    """
+    
+    from netCDF4 import Dataset
+    
+    files = np.atleast_1d(files)
+    
+    for f in files:
+        
+        nc = Dataset(f)
+        
+        # Although a little tedious, we are going to get the fields and
+        # put them into a dict and then to DataFrame...
+        ev = dict()
+        
+        ev['lat'] = nc.variables['event_lat'][:]
+        ev['lon'] = _convert_lon_360_to_180(nc.variables['event_lon'][:])
+        ev['energy'] = nc.variables['event_energy'][:]
+        ev['parent_id'] = nc.variables['event_parent_group_id'][:]
+        ev['px'] = nc.variables['event_x_LM'][:]
+        ev['py'] = nc.variables['event_y_LM'][:]
+        ev['intensity'] = nc.variables['event_intensity_LM'][:]
+        ev['bg_msb'] = nc.variables['event_bg_msb_LM'][:]
+        ev['filter_id']= nc.variables['event_filter_id_LM'][:]
+        ev['time'] = _convert_lm_time(nc.variables['event_time_LM'][:].data)
+        # Not using: event_frame_id_LM
+        
+        ev = pd.DataFrame(ev, columns=ev.keys())
+
+        if not keepall:
+            good_rows = ~ev.lat.isna()
+            ev = ev[good_rows]
+        
+        # Now, the groups:
+        # todo: make sure there are groups...
+        grp = dict()
+        grp['lat'] = nc.variables['group_lat'][:]
+        grp['lon'] = _convert_lon_360_to_180(nc.variables['group_lon'][:])
+        grp['energy'] = nc.variables['group_energy'][:]
+        # Make sure IDs are unsigned...
+        # todo: double check this is OK
+        grp['id'] = nc.variables['group_id'][:].astype(np.uint32)
+        grp['area'] = nc.variables['group_footprint_LM'][:]
+        grp['child_count'] = nc.variables['group_child_count_LM'][:]
+        
+        grp['time'] = _convert_lm_time(nc.variables['group_time_LM'][:].data)
+
+        grp = pd.DataFrame(grp, columns=grp.keys())
+        
+    return Ltg(ev), Ltg(grp)
+
 def read_events_nc(files):
     """
     Read in the nc file produced by the Level 0 reader.
