@@ -102,6 +102,50 @@ def _convert_lm_time(lm_time):
     
     return times
 
+def read_events_nc(files):
+    """
+    Read in the nc file produced by the Level 0 reader.
+    
+    Clem Tillier of Lockheed Martin has made a L0 reader available that
+    will produce events. These events are not geo-navigated. 
+    
+    Unique IDs are not implemented.
+    
+    Parameters
+    -----------
+    files: str or sequence of string
+        The files to read in
+    """
+    
+    import xarray as xr
+    
+    files = np.atleast_1d(files)
+    
+    data = list()
+    
+    for f in files:
+        ev = xr.open_dataset(f, decode_times=False)
+        
+        ev = ev.to_dataframe()
+        
+        # Drop the scalar columns
+        ev.drop(columns=['event_count', 'error_count', 
+                         'spw_dropped_event_count'], inplace=True)
+    
+        # Now, we build the time. It takes some awkward code gymnastics...
+        time = (np.datetime64('2000-01-01T12', 'ns') 
+                + ev.event_day.astype('int64').values.astype('timedelta64[D]')
+                + ev.event_millisecond.astype('int64').values.astype('timedelta64[ms]')
+                + ev.event_microsecond.astype('int64').values.astype('timedelta64[us]'))
+               
+        ev['time'] = time
+        
+        data.append(ev)
+        
+    data = Ltg(pd.concat(data))
+    
+    return data
+
 def energy_colors(energies):
     """
     Map the given GLM energies to a set of 256 colors.
