@@ -158,6 +158,12 @@ class LMA(Ltg):
         for _file in files:
             if h5py.is_hdf5(_file):
                 this_data = self._readHDF(_file)
+                
+                # We need to modify flash IDs when reading multiple files
+                # to ensure they are unique                
+                if len(sources) !=0:                    
+                    _ctr = sources[-1].flash_id.max()
+                    this_data.flash_id += _ctr+1
             else:
                 # Assume it's ASCII
                 this_data = self._readASCII(_file)
