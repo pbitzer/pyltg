@@ -47,6 +47,171 @@ import h5py
 
 from pyltg.core.baseclass import Ltg
 
+def flash_sort(files, 
+               ctr_lat = None, ctr_lon = None,
+               logpath=None, savepath=None, 
+               stations=[6, 21], chi2=[0, 2.0], alt = [0, 20000], 
+               distance = 3000.0, 
+               thresh_duration=3.0, thresh_critical_time=0.15, 
+               merge_critical_time=0.5, mask_length=8, 
+               ascii_flashes_out='flashes_out.dat'):
+    """
+    Sort the given files into flashes. 
+    
+    This is essentially a wrapper for the flash sorting done by `lmatools`, 
+    so it requires this package. 
+    
+    Most parameters are passed straight to the requisite function in 
+    `lmatools` and are documented there. Selected ones are documented here.
+
+    Parameters
+    -----------
+    files: str or sequence of string
+        The files to read in. Should ASCII files with LMA sources.    
+    logpath: str
+        Where the flash sorting logs are saved. Defaults to tmp/ 
+        relative to the path of the first `files`. If the path doesn't exist, 
+        we'll make it.     
+    savepath: str
+        Where the flash sorting files are saved. Defaults to flash_sort/ 
+        relative to the path of the first `files`. If the path doesn't exist, 
+        we'll make it. 
+    ctr_lat: float
+        The center latitude of the LMA for the files. If this _or_ `ctr_lon` 
+        is not given, we'll peek in the first file to find the coordinate 
+        center. This is then used for all the files.
+    ctr_lon: float
+        The center longitude of the LMA for the files. If this _or_ `ctr_lat` 
+        is not given, we'll peek in the first file to find the coordinate 
+        center. This is then used for all the files.
+    
+    """
+    
+    from pathlib import Path
+    
+    from lmatools.flashsort.autosort.autorun import run_files_with_params, logger_setup #test_output
+    from lmatools.flashsort.autosort.autorun_sklearn import cluster
+    
+    files = np.atleast_1d(files)
+    
+    if logpath is None:
+        logpath = Path(files[0]).parent.joinpath('tmp/')
+        
+    logpath.mkdir(parents=True, exist_ok=True)
+        
+    logger_setup(logpath)
+        
+    if savepath is None:
+        savepath =  Path(files[0]).parent.joinpath('flash_sort/')
+        
+    savepath.mkdir(parents=True, exist_ok=True)
+    
+    if (ctr_lat is None) or (ctr_lon is None):
+       ctr_lat, ctr_lon = _get_center_from_file(files[0])
+    
+    # Make keyword
+    params = {'stations':(6,21),
+              'chi2':(0,2.0),
+              'ascii_flashes_out':'flashes_out.dat',
+              'ctr_lat':ctr_lat, 'ctr_lon':ctr_lat,
+              'alt':(0, 20000.0),
+              'distance':3000.0, 
+              'thresh_duration':3.0, 'thresh_critical_time':0.15, 
+              'merge_critical_time':0.5, 'mask_length':8
+              }
+    
+    
+    run_files_with_params(files, savepath, params, cluster, retain_ascii_output=False, cleanup_tmp=True)
+
+
+def get_flashes(lma_data, min_sources=None):
+    """
+    Given a Pandas DataFrame of LMA flash-sorted data (like from the `LMA`
+    class), group the sources into the flashes.
+    
+    This does not do flash sorting. Instead, this function provides a way
+    to extract the flashes that have already been sorted. 
+    
+    Parameters
+    -----------
+    lma_data : DataFrame
+        The DataFrame of LMA data. Should match the DataFrame used internally
+        by the `LMA` class
+    min_sources : scalar
+        If not None, then only return flashes that have at least the specified
+        number of sources. This seems to take some time, perhaps more time
+        than simply skipping these flashes in subsequent processing.
+    
+    
+    Returns
+    -------
+    Pandas GroupByDataFrame
+    
+    Each key in the GroupByDataFrame will be the flash ID.
+    
+    Examples
+    ---------
+    
+    l = LMA(file)
+    flashes = group_flashes(l.data)
+    
+    """
+    
+    def _get_bins(flash_ids):
+        # This helper gets sorted, unique bins that span the given flash IDs
+        bins = flash_ids
+        bins.sort()
+        bins = np.unique(bins)
+    
+        # Append one more bin to make sure we don't hit the weird
+        # end-of-bins effects when "cutting
+        bins = np.append(bins, bins[-1]+1)
+        
+        return bins
+
+    # First, create bins for the flash IDs
+    bins = _get_bins(lma_data.flash_id.values)
+
+    # Define the cut to be used for the groupby:
+    _cut = pd.cut(lma_data.flash_id, bins, labels=False, right=False)
+
+    fl = lma_data.groupby(_cut)
+    
+    # todo: here, we would check for other flash constraints
+    if min_sources is not None:
+        
+        fl_data = fl.filter(lambda x: len(x)>=min_sources)
+        
+        # Now, we cut and group again:
+        bins = _get_bins(fl_data.flash_id.values)
+        _cut = pd.cut(fl_data.flash_id, bins, labels=False, right=False)
+        fl = fl_data.groupby(_cut)
+    
+    return fl
+
+def _get_center_from_file(file):
+    # Go get the coordinate center from a LMA source file
+    from itertools import islice
+    import gzip
+    
+    with gzip.open(file, 'rt') as thisFile:
+        poss_hdr = list(islice(thisFile, 100))
+                 
+    # This should contain at least the whole header for LMA files.
+    # Parse it to find the start of the data
+    # todo: refactor this a function?
+        
+    match_text = r"^Coordinate center"        
+    center_line = idxMatch(poss_hdr, match_text)[0]
+   
+    # From this line, split this into the fields. 
+    # The last three are lat, lon, alt.
+    center_split = poss_hdr[center_line].split()
+    
+    # Everything up to this line is the header
+    lat, lon = float(center_split[-3]), float(center_split[-2])
+    
+    return lat, lon
 
 def idxMatch(lst, text2match):
     """
@@ -158,6 +323,12 @@ class LMA(Ltg):
         for _file in files:
             if h5py.is_hdf5(_file):
                 this_data = self._readHDF(_file)
+                
+                # We need to modify flash IDs when reading multiple files
+                # to ensure they are unique                
+                if len(sources) !=0:                    
+                    _ctr = sources[-1].flash_id.max()
+                    this_data.flash_id += _ctr+1
             else:
                 # Assume it's ASCII
                 this_data = self._readASCII(_file)
