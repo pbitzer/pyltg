@@ -70,6 +70,214 @@ from glmtools.io.glm import GLMDataset
 from pyltg.core.baseclass import Ltg
 
 
+def _convert_lon_360_to_180(lons):
+    # Small helper to convert a set of 0->360 lons to -180->180
+    return ((lons + 180) % 360)-180
+
+def _convert_lm_time(lm_time):
+    # Simple helper to take the times in LM files are convert to a suitable time
+    
+    # Note: the times slightly differ (~< 100 us precision) from IDL implementation
+    
+    # The times in the LM files are days past the epoch, but it's a float.
+    # We're going to need to do some work to get it into a format
+    # suitable for NumPy's datetime. Pandas will do it, but it's slow.
+    
+    
+    epoch = np.datetime64('2000-01-01T12', 'ns')
+
+    # First, extract the whole day count
+    days = lm_time.astype('int32').astype('timedelta64[D]')
+    
+    # Next, get the fractional seconds past the start of the day
+    sec_past_day = (lm_time % 1) * 86400
+
+    # NumPy's datetime64 is a bit of pain, since it requires integers.
+    # So, we'll extract them:
+    whole_sec = sec_past_day.astype('int32').astype('timedelta64[s]')
+    whole_nsec = ((sec_past_day % 1) * 1e9).astype('int64').astype('timedelta64[ns]')
+    
+    # After all that, we can finally build the time:    
+    times = epoch + days + whole_sec + whole_nsec
+    
+    return times
+
+def read_lm_ev_mat(files):
+    """
+    Read a Lockheed Martin mat file (Matlab save file) that contains 
+    only events.
+    
+    As part of PLT, a particular processing chain of L0 data produces
+    Matlab mat files with just events. Usually, this is done with no
+    filters turned on, so we can naviagate all available events (at least,
+    the ones on the earth). 
+    
+    The underlying assumption is that there is a structure 
+    named `evOut` in the files.
+    
+    No attempt to ensure unique IDs is done.
+    
+    Parameters
+    -----------
+    files: str or sequence of string
+        The files to read in    
+    
+    """
+    
+    from scipy.io import loadmat
+    
+    files = np.atleast_1d(files)
+
+    ev = list()
+    
+    # Go through the files, and get the structure...
+    
+    for f in files:    
+        mat_data = loadmat(f)
+        
+        ev_out = mat_data['evOut']
+        
+        # We need to do a little work, since loadmat seems to pull some 
+        # weird nesting in the record array.(For the record, squeeze_me 
+        # doens't seem to work.)
+        
+        # We'll just extract into a dict, to eventually put it into a DataFrame
+        this_ev = dict(
+                      time=_convert_lm_time(ev_out['origination_time'][0][0][0]), 
+                      px=ev_out['x'][0][0][0], 
+                      py=ev_out['y'][0][0][0], 
+                      intensity=ev_out['intensity'][0][0][0], 
+                      bg_msb=ev_out['bg_msb'][0][0][0], 
+                      filter_id=ev_out['filterID'][0][0][0], 
+                      energy=ev_out['energy'][0][0][0], 
+                      lat=ev_out['lat'][0][0][0], 
+                      lon=_convert_lon_360_to_180(ev_out['lon'][0][0][0])
+                      )
+        # Note: this ignores the following fields present in evOut:
+        # 'device_status', 'consec', 'frame_id', 'df', 'rtep', 'pixel', 
+        # 'chan', 'ufid', 'isActive', 'time'
+        
+        ev.append(pd.DataFrame(this_ev) )   
+        
+    ev = pd.concat(ev, ignore_index=True)
+
+    # Now, we need to add alt so that we can make it an Ltg class
+    ev['alt'] = 0.0
+    
+    return Ltg(ev)
+
+def read_lm_file(files, keepall=False):
+    """
+    Read Lockheed Martin netCDF file with events and groups. 
+    
+    As part of PLT, files were generated using LM's Matlab code that contains
+    Level 1 events and groups. (Both L1b and L1 events could be present).
+    
+    
+    IDs (event, group) are not guaranteed to be unque if reading multiple files
+    
+    Parameters
+    ----------
+    files: str or sequence of string
+        The files to read in
+    keepall: bool
+        If True, keep all events in the file, even ones that were filtered.
+        Note that only 1b events are geo-navigated. 
+        
+    """
+    
+    from netCDF4 import Dataset
+    
+    files = np.atleast_1d(files)
+    
+    for f in files:
+        
+        nc = Dataset(f)
+        
+        # Although a little tedious, we are going to get the fields and
+        # put them into a dict and then to DataFrame...
+        ev = dict()
+        
+        ev['lat'] = nc.variables['event_lat'][:]
+        ev['lon'] = _convert_lon_360_to_180(nc.variables['event_lon'][:])
+        ev['energy'] = nc.variables['event_energy'][:]
+        ev['parent_id'] = nc.variables['event_parent_group_id'][:]
+        ev['px'] = nc.variables['event_x_LM'][:]
+        ev['py'] = nc.variables['event_y_LM'][:]
+        ev['intensity'] = nc.variables['event_intensity_LM'][:]
+        ev['bg_msb'] = nc.variables['event_bg_msb_LM'][:]
+        ev['filter_id']= nc.variables['event_filter_id_LM'][:]
+        ev['time'] = _convert_lm_time(nc.variables['event_time_LM'][:].data)
+        # Not using: event_frame_id_LM
+        
+        ev = pd.DataFrame(ev, columns=ev.keys())
+
+        if not keepall:
+            good_rows = ~ev.lat.isna()
+            ev = ev[good_rows]
+        
+        # Now, the groups:
+        # todo: make sure there are groups...
+        grp = dict()
+        grp['lat'] = nc.variables['group_lat'][:]
+        grp['lon'] = _convert_lon_360_to_180(nc.variables['group_lon'][:])
+        grp['energy'] = nc.variables['group_energy'][:]
+        # Make sure IDs are unsigned...
+        # todo: double check this is OK
+        grp['id'] = nc.variables['group_id'][:].astype(np.uint32)
+        grp['area'] = nc.variables['group_footprint_LM'][:]
+        grp['child_count'] = nc.variables['group_child_count_LM'][:]
+        
+        grp['time'] = _convert_lm_time(nc.variables['group_time_LM'][:].data)
+
+        grp = pd.DataFrame(grp, columns=grp.keys())
+        
+    return Ltg(ev), Ltg(grp)
+
+def read_events_nc(files):
+    """
+    Read in the nc file produced by the Level 0 reader.
+    
+    Clem Tillier of Lockheed Martin has made a L0 reader available that
+    will produce events. These events are not geo-navigated. 
+    
+    Unique IDs are not implemented.
+    
+    Parameters
+    -----------
+    files: str or sequence of string
+        The files to read in
+    """
+    
+    import xarray as xr
+    
+    files = np.atleast_1d(files)
+    
+    data = list()
+    
+    for f in files:
+        ev = xr.open_dataset(f, decode_times=False)
+        
+        ev = ev.to_dataframe()
+        
+        # Drop the scalar columns
+        ev.drop(columns=['event_count', 'error_count', 
+                         'spw_dropped_event_count'], inplace=True)
+    
+        # Now, we build the time. It takes some awkward code gymnastics...
+        time = (np.datetime64('2000-01-01T12', 'ns') 
+                + ev.event_day.astype('int64').values.astype('timedelta64[D]')
+                + ev.event_millisecond.astype('int64').values.astype('timedelta64[ms]')
+                + ev.event_microsecond.astype('int64').values.astype('timedelta64[us]'))
+               
+        ev['time'] = time
+        
+        data.append(ev)
+        
+    data = Ltg(pd.concat(data))
+    
+    return data
+
 def energy_colors(energies):
     """
     Map the given GLM energies to a set of 256 colors.
