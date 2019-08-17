@@ -47,6 +47,71 @@ import h5py
 
 from pyltg.core.baseclass import Ltg
 
+def get_flashes(lma_data, min_sources=None):
+    """
+    Given a Pandas DataFrame of LMA flash-sorted data (like from the `LMA`
+    class), group the sources into the flashes.
+    
+    This does not do flash sorting. Instead, this function provides a way
+    to extract the flashes that have already been sorted. 
+    
+    Parameters
+    -----------
+    lma_data : DataFrame
+        The DataFrame of LMA data. Should match the DataFrame used internally
+        by the `LMA` class
+    min_sources : scalar
+        If not None, then only return flashes that have at least the specified
+        number of sources. This seems to take some time, perhaps more time
+        than simply skipping these flashes in subsequent processing.
+    
+    
+    Returns
+    -------
+    Pandas GroupByDataFrame
+    
+    Each key in the GroupByDataFrame will be the flash ID.
+    
+    Examples
+    ---------
+    
+    l = LMA(file)
+    flashes = group_flashes(l.data)
+    
+    """
+    
+    def _get_bins(flash_ids):
+        # This helper gets sorted, unique bins that span the given flash IDs
+        bins = flash_ids
+        bins.sort()
+        bins = np.unique(bins)
+    
+        # Append one more bin to make sure we don't hit the weird
+        # end-of-bins effects when "cutting
+        bins = np.append(bins, bins[-1]+1)
+        
+        return bins
+
+    # First, create bins for the flash IDs
+    bins = _get_bins(lma_data.flash_id.values)
+
+    # Define the cut to be used for the groupby:
+    _cut = pd.cut(lma_data.flash_id, bins, labels=False, right=False)
+
+    fl = lma_data.groupby(_cut)
+    
+    # todo: here, we would check for other flash constraints
+    if min_sources is not None:
+        
+        fl_data = fl.filter(lambda x: len(x)>=min_sources)
+        
+        # Now, we cut and group again:
+        bins = _get_bins(fl_data.flash_id.values)
+        _cut = pd.cut(fl_data.flash_id, bins, labels=False, right=False)
+        fl = fl_data.groupby(_cut)
+    
+    return fl
+
 def _get_center_from_file(file):
     # Go get the coordinate center from a LMA source file
     from itertools import islice
