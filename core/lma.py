@@ -111,14 +111,16 @@ def flash_sort(files,
         ctr_lat, ctr_lon = _get_center_from_file(files[0])
 
     # Make keyword
-    params = {'stations': (6,21),
-              'chi2': (0,2.0),
-              'ascii_flashes_out': 'flashes_out.dat',
+    params = {'stations': stations,
+              'chi2': chi2,
+              'ascii_flashes_out': ascii_flashes_out,
               'ctr_lat': ctr_lat, 'ctr_lon': ctr_lat,
-              'alt': (0, 20000.0),
-              'distance': 3000.0,
-              'thresh_duration': 3.0, 'thresh_critical_time': 0.15,
-              'merge_critical_time': 0.5, 'mask_length': 8
+              'alt': alt,
+              'distance': distance,
+              'thresh_duration': thresh_duration, 
+              'thresh_critical_time': thresh_critical_time,
+              'merge_critical_time': merge_critical_time, 
+              'mask_length': mask_length
               }
 
     run_files_with_params(files, savepath, params, cluster, 
