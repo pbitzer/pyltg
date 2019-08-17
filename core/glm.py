@@ -70,6 +70,10 @@ from glmtools.io.glm import GLMDataset
 from pyltg.core.baseclass import Ltg
 
 
+def _convert_lon_360_to_180(lons):
+    # Small helper to convert a set of 0->360 lons to -180->180
+    return ((lons + 180) % 360)-180
+
 def energy_colors(energies):
     """
     Map the given GLM energies to a set of 256 colors.
