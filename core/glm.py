@@ -102,6 +102,70 @@ def _convert_lm_time(lm_time):
     
     return times
 
+def read_lm_ev_mat(files):
+    """
+    Read a Lockheed Martin mat file (Matlab save file) that contains 
+    only events.
+    
+    As part of PLT, a particular processing chain of L0 data produces
+    Matlab mat files with just events. Usually, this is done with no
+    filters turned on, so we can naviagate all available events (at least,
+    the ones on the earth). 
+    
+    The underlying assumption is that there is a structure 
+    named `evOut` in the files.
+    
+    No attempt to ensure unique IDs is done.
+    
+    Parameters
+    -----------
+    files: str or sequence of string
+        The files to read in    
+    
+    """
+    
+    from scipy.io import loadmat
+    
+    files = np.atleast_1d(files)
+
+    ev = list()
+    
+    # Go through the files, and get the structure...
+    
+    for f in files:    
+        mat_data = loadmat(f)
+        
+        ev_out = mat_data['evOut']
+        
+        # We need to do a little work, since loadmat seems to pull some 
+        # weird nesting in the record array.(For the record, squeeze_me 
+        # doens't seem to work.)
+        
+        # We'll just extract into a dict, to eventually put it into a DataFrame
+        this_ev = dict(
+                      time=_convert_lm_time(ev_out['origination_time'][0][0][0]), 
+                      px=ev_out['x'][0][0][0], 
+                      py=ev_out['y'][0][0][0], 
+                      intensity=ev_out['intensity'][0][0][0], 
+                      bg_msb=ev_out['bg_msb'][0][0][0], 
+                      filter_id=ev_out['filterID'][0][0][0], 
+                      energy=ev_out['energy'][0][0][0], 
+                      lat=ev_out['lat'][0][0][0], 
+                      lon=_convert_lon_360_to_180(ev_out['lon'][0][0][0])
+                      )
+        # Note: this ignores the following fields present in evOut:
+        # 'device_status', 'consec', 'frame_id', 'df', 'rtep', 'pixel', 
+        # 'chan', 'ufid', 'isActive', 'time'
+        
+        ev.append(pd.DataFrame(this_ev) )   
+        
+    ev = pd.concat(ev, ignore_index=True)
+
+    # Now, we need to add alt so that we can make it an Ltg class
+    ev['alt'] = 0.0
+    
+    return Ltg(ev)
+
 def read_lm_file(files, keepall=False):
     """
     Read Lockheed Martin netCDF file with events and groups. 
