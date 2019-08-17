@@ -47,6 +47,29 @@ import h5py
 
 from pyltg.core.baseclass import Ltg
 
+def _get_center_from_file(file):
+    # Go get the coordinate center from a LMA source file
+    from itertools import islice
+    import gzip
+    
+    with gzip.open(file, 'rt') as thisFile:
+        poss_hdr = list(islice(thisFile, 100))
+                 
+    # This should contain at least the whole header for LMA files.
+    # Parse it to find the start of the data
+    # todo: refactor this a function?
+        
+    match_text = r"^Coordinate center"        
+    center_line = idxMatch(poss_hdr, match_text)[0]
+   
+    # From this line, split this into the fields. 
+    # The last three are lat, lon, alt.
+    center_split = poss_hdr[center_line].split()
+    
+    # Everything up to this line is the header
+    lat, lon = float(center_split[-3]), float(center_split[-2])
+    
+    return lat, lon
 
 def idxMatch(lst, text2match):
     """
