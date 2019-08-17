@@ -74,6 +74,34 @@ def _convert_lon_360_to_180(lons):
     # Small helper to convert a set of 0->360 lons to -180->180
     return ((lons + 180) % 360)-180
 
+def _convert_lm_time(lm_time):
+    # Simple helper to take the times in LM files are convert to a suitable time
+    
+    # Note: the times slightly differ (~< 100 us precision) from IDL implementation
+    
+    # The times in the LM files are days past the epoch, but it's a float.
+    # We're going to need to do some work to get it into a format
+    # suitable for NumPy's datetime. Pandas will do it, but it's slow.
+    
+    
+    epoch = np.datetime64('2000-01-01T12', 'ns')
+
+    # First, extract the whole day count
+    days = lm_time.astype('int32').astype('timedelta64[D]')
+    
+    # Next, get the fractional seconds past the start of the day
+    sec_past_day = (lm_time % 1) * 86400
+
+    # NumPy's datetime64 is a bit of pain, since it requires integers.
+    # So, we'll extract them:
+    whole_sec = sec_past_day.astype('int32').astype('timedelta64[s]')
+    whole_nsec = ((sec_past_day % 1) * 1e9).astype('int64').astype('timedelta64[ns]')
+    
+    # After all that, we can finally build the time:    
+    times = epoch + days + whole_sec + whole_nsec
+    
+    return times
+
 def energy_colors(energies):
     """
     Map the given GLM energies to a set of 256 colors.
