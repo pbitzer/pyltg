@@ -16,6 +16,11 @@ class Ltg(object):
 
     def __init__(self, *args, **kwargs):
         self._data = pd.DataFrame(*args, **kwargs)  # initialize to an empty DataFrame
+        
+        # Check to see if 'alt' is included. If not, add it:
+        # todo: check for other columns
+        if 'alt' not in self._data.columns:
+            self._data['alt'] = 0.0
 
     def __len__(self):
         return self._data.shape[0]
