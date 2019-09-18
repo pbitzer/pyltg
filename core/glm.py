@@ -287,6 +287,77 @@ def read_events_nc(files):
 
     return data
 
+
+def event_poly(events, latlon=True, 
+                colors='yellow', fill=True):
+    """
+    Get a MPL PolyCollection fthat represents the polygons of the events. 
+    
+    The color of each polygon represents the energy.
+    
+    Right now, a rough approximation for the event footprint is used, namely
+    they are assumed to be approximately 4km x 4km. 
+    
+    Parameters
+    -----------
+    events : Pandas Dataframe
+        The events to be plotted. Intended to be similar to output of
+        `GLM.get_events`
+    latlon : bool
+        If True, return the PolyCollection so it can be plotted on a
+        Cartopy map plotted with lats and lons.
+    colors : str
+        The colors to be used to represent the energy of each event.
+    fill : bool
+        If True, fill the polygons according to `colors`
+    
+    
+    Returns
+    --------
+    MPL PolyCollection
+        A Matplotlib PolyCollection of the events. Of course, to add this 
+        to an existing axes (either MPL native or Cartopy GeoAxes) just use
+        `ax.add_collection(poly)`
+    
+    """
+    import cartopy.crs as ccrs
+
+    # There doesn't seem to be "none" for transform, and the plotting
+    # calls are similar whether or not we do a map. So, make a
+    # dict with transform if we have it, otherwise leave it empty.
+    trans_kw = {}
+    if latlon:
+        trans_kw['transform'] = ccrs.PlateCarree()
+
+    centers = np.vstack((events.lon, events.lat)).T
+
+    # assume 8 km square pixels for simplicity
+    offsets = np.ones((4, len(events), 2))
+    EVENT_EDGE = 0.04
+    offsets[0, :, 0] = -EVENT_EDGE  # move ul, x
+    offsets[1, :, 0] = -EVENT_EDGE  # move ll, x
+    offsets[2, :, 0] =  EVENT_EDGE  # move lr, x
+    offsets[3, :, 0] =  EVENT_EDGE  # move ur, x
+
+    offsets[0, :, 1] =  EVENT_EDGE  # move ul, y
+    offsets[1, :, 1] = -EVENT_EDGE  # move ll, y
+    offsets[2, :, 1] = -EVENT_EDGE  # move lr, y
+    offsets[3, :, 1] =  EVENT_EDGE  # move ur, y
+
+    verts = centers + offsets
+    verts = np.swapaxes(verts, 0, 1)
+
+    if fill:
+        # todo: here, we would pick a different color scheme
+        colors = energy_colors(events.energy.values)/255
+    else:
+        colors = 'none'
+
+    poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
+
+    return poly
+
+
 def energy_colors(energies):
     """
     Map the given GLM energies to a set of 256 colors.
