@@ -43,7 +43,7 @@ import re
 import numpy as np
 import pandas as pd
 
-import h5py
+import tables
 
 from pyltg.core.baseclass import Ltg
 
@@ -251,9 +251,8 @@ class LMA(Ltg):
         sources = list()
 
         for _file in files:
-            if h5py.is_hdf5(_file):
+            if tables.is_hdf5_file(_file):
                 this_data = self._readHDF(_file)
-
                 # We need to modify flash IDs when reading multiple files
                 # to ensure they are unique
                 if len(sources) != 0:
@@ -343,47 +342,38 @@ class LMA(Ltg):
         however, so it shouldn't be a big problem.
 
         """
-        with h5py.File(file, 'r') as h5_file:
-
-            keys = list(h5_file.keys())
-
-            if keys.count('events') != 1:
+        
+        with tables.open_file(file) as h5_file:
+            # Some of this is _very_ similar to lmatools....
+            
+            table_names = list(h5_file.root.events._v_children.keys())
+            
+            if len(table_names) != 1:
                 print('Invalid file - wrong number of "events" datasets')
                 # todo: raise exception
                 return
-
-            # We need to get the group, then extrct the dataset
-            # AND, get the "value" to get it into an array
-            ev_dataset = list(h5_file.get('events').values())[0]
-
-            data = ev_dataset.value
-
-            t0_char = ev_dataset.attrs['start_time'].decode()
+            else:
+                this_table = h5_file.root.events[table_names[0]]
+            
+            data = this_table.read()
+        
+            start_time = this_table.attrs.start_time
 
         # Make this a DataFrame before we start manipulating:
         data = pd.DataFrame(data)
-
+        
         # First, drop columns we don't need:
         if 'charge' in data.columns:
             data.drop(columns='charge', inplace=True)
-
-        # todo: Do we need to map the column names to ones used by Ltg Class?
-
-        # Next, the time is saved as an offset to a epoch. We don't want
-        # this, we want an absolute time. Things are slightly
-        # complicated because this epoch is saved as a string.
-
-        # The field are separated by "L". Extract the year, month, day.
-        # We're going to assume the times are relative to midnight to this day.
-        _start = t0_char.split('L')
-
-        # todo: refactor this ... largely the same as in readFile
-        date = np.datetime64('{1:0>4}-{3:0>2}-{5:0>2}'.format(*_start), 'ns')
+            
+        # Next, the time is saved as an offset to a epoch (sec past midnight). 
+        # We don't want this, we want an absolute time. 
+        date = pd.Timestamp(*start_time[0:3]) 
+            
         secs = data.time.astype('int64').astype('timedelta64[s]')
         secs = secs.astype('timedelta64[ns]')
         secsFrac = ((data.time % 1)*1e9).astype('timedelta64[ns]')
-
-        # Cast the times as datetime64[ns]....
+            
         data.time = date + secs + secsFrac
-
+        
         return data
