@@ -839,32 +839,9 @@ class GLM():
         else:
             events = self.get_events(groups.id, combine=True)
 
-            centers = np.vstack((events.lon, events.lat)).T
-
-            # assume 8 km square pixels for simplicity
-            offsets = np.ones((4, len(events), 2))
-            EVENT_EDGE = 0.04
-            offsets[0, :, 0] = -EVENT_EDGE  # move ul, x
-            offsets[1, :, 0] = -EVENT_EDGE  # move ll, x
-            offsets[2, :, 0] =  EVENT_EDGE  # move lr, x
-            offsets[3, :, 0] =  EVENT_EDGE  # move ur, x
-
-            offsets[0, :, 1] =  EVENT_EDGE  # move ul, y
-            offsets[1, :, 1] = -EVENT_EDGE  # move ll, y
-            offsets[2, :, 1] = -EVENT_EDGE  # move lr, y
-            offsets[3, :, 1] =  EVENT_EDGE  # move ur, y
-
-            verts = centers + offsets
-            verts = np.swapaxes(verts, 0, 1)
-
-            if fill_events:
-                # todo: here, we would pick a different color scheme
-                colors = energy_colors(events.energy.values)/255
-            else:
-                colors = 'none'
-
-            poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
+            poly = event_poly(events, colors=colors_events, latlon=latlon, fill=True)
             _ = ax.add_collection(poly)
+            
             # If nothing else is plotted, then the x/y limits be MPL's default.
             # In this case, we'll want to set the x/y limits.
             # Otherwise, just add the events to the current view
