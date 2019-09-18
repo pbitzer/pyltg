@@ -173,8 +173,7 @@ def read_lm_file(files, keepall=False):
     As part of PLT, files were generated using LM's Matlab code that contains
     Level 1 events and groups. (Both L1b and L1 events could be present).
 
-
-    IDs (event, group) are not guaranteed to be unque if reading multiple files
+    IDs (event, group) are not guaranteed to be unique if reading multiple files
 
     Parameters
     ----------
