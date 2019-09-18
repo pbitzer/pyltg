@@ -238,7 +238,7 @@ class LMA(Ltg):
     def readFile(self, files):
         """
         Read the given file.
-        
+
         If all the passed files are empty (i.e., no data) then LMA.data
         will be None.
 
@@ -351,38 +351,38 @@ class LMA(Ltg):
         however, so it shouldn't be a big problem.
 
         """
-        
+
         with tables.open_file(file) as h5_file:
             # Some of this is _very_ similar to lmatools....
-            
+
             table_names = list(h5_file.root.events._v_children.keys())
-            
+
             if len(table_names) != 1:
                 print('Invalid file - wrong number of "events" datasets')
                 # todo: raise exception
                 return
             else:
                 this_table = h5_file.root.events[table_names[0]]
-            
+
             data = this_table.read()
-        
+
             start_time = this_table.attrs.start_time
 
         # Make this a DataFrame before we start manipulating:
         data = pd.DataFrame(data)
-        
+
         # First, drop columns we don't need:
         if 'charge' in data.columns:
             data.drop(columns='charge', inplace=True)
-            
-        # Next, the time is saved as an offset to a epoch (sec past midnight). 
-        # We don't want this, we want an absolute time. 
-        date = pd.Timestamp(*start_time[0:3]) 
-            
+
+        # Next, the time is saved as an offset to a epoch (sec past midnight).
+        # We don't want this, we want an absolute time.
+        date = pd.Timestamp(*start_time[0:3])
+
         secs = data.time.astype('int64').astype('timedelta64[s]')
         secs = secs.astype('timedelta64[ns]')
         secsFrac = ((data.time % 1)*1e9).astype('timedelta64[ns]')
-            
+
         data.time = date + secs + secsFrac
-        
+
         return data
