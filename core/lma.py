@@ -238,6 +238,9 @@ class LMA(Ltg):
     def readFile(self, files):
         """
         Read the given file.
+        
+        If all the passed files are empty (i.e., no data) then LMA.data
+        will be None.
 
         Parameters
         ----------
