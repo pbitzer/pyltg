@@ -205,6 +205,8 @@ class LMA(Ltg):
         # todo: this doesn't need to be a instance method. Either make it class method, or make it a function.
         self.__colNames()  # mapping from columns in the file to object props
 
+        self._data = None
+
         if files is not None:
             self.readFile(files)
 
