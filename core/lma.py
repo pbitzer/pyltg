@@ -262,11 +262,17 @@ class LMA(Ltg):
                 # Assume it's ASCII
                 this_data = self._readASCII(_file)
 
-            sources.append(this_data)
+            if len(this_data) != 0:
+                # This should catch empty files
+                sources.append(this_data)
 
-        self._data = pd.concat(sources, ignore_index=True)
-
-        self._data.alt /= 1e3  # convert to km
+        try:
+            self._data = pd.concat(sources, ignore_index=True)
+        except ValueError:
+            # This can happen when we nothing to concat (all files empty)
+            print('No data in these files')
+        else:
+            self._data.alt /= 1e3  # convert to km
 
     def _readASCII(self, file):
         """
