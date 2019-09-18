@@ -83,7 +83,6 @@ def _convert_lm_time(lm_time):
     # We're going to need to do some work to get it into a format
     # suitable for NumPy's datetime. Pandas will do it, but it's slow.
 
-
     epoch = np.datetime64('2000-01-01T12', 'ns')
 
     # First, extract the whole day count
@@ -288,16 +287,16 @@ def read_events_nc(files):
     return data
 
 
-def event_poly(events, latlon=True, 
-                colors='yellow', fill=True):
+def event_poly(events, latlon=True,
+               colors='yellow', fill=True):
     """
-    Get a MPL PolyCollection fthat represents the polygons of the events. 
-    
+    Get a MPL PolyCollection fthat represents the polygons of the events.
+
     The color of each polygon represents the energy.
-    
+
     Right now, a rough approximation for the event footprint is used, namely
-    they are assumed to be approximately 4km x 4km. 
-    
+    they are assumed to be approximately 4km x 4km.
+
     Parameters
     -----------
     events : Pandas Dataframe
@@ -310,15 +309,15 @@ def event_poly(events, latlon=True,
         The colors to be used to represent the energy of each event.
     fill : bool
         If True, fill the polygons according to `colors`
-    
-    
+
+
     Returns
     --------
     MPL PolyCollection
-        A Matplotlib PolyCollection of the events. Of course, to add this 
+        A Matplotlib PolyCollection of the events. Of course, to add this
         to an existing axes (either MPL native or Cartopy GeoAxes) just use
         `ax.add_collection(poly)`
-    
+
     """
     import cartopy.crs as ccrs
 
@@ -841,7 +840,7 @@ class GLM():
 
             poly = event_poly(events, colors=colors_events, latlon=latlon, fill=True)
             _ = ax.add_collection(poly)
-            
+
             # If nothing else is plotted, then the x/y limits be MPL's default.
             # In this case, we'll want to set the x/y limits.
             # Otherwise, just add the events to the current view
