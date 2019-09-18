@@ -190,6 +190,9 @@ def read_lm_file(files, keepall=False):
 
     files = np.atleast_1d(files)
 
+    all_ev = list()
+    all_grp = list()
+
     for f in files:
 
         nc = Dataset(f)
@@ -216,6 +219,8 @@ def read_lm_file(files, keepall=False):
             good_rows = ~ev.lat.isna()
             ev = ev[good_rows]
 
+        all_ev.append(ev)
+
         # Now, the groups:
         # todo: make sure there are groups...
         grp = dict()
@@ -232,7 +237,12 @@ def read_lm_file(files, keepall=False):
 
         grp = pd.DataFrame(grp, columns=grp.keys())
 
-    return Ltg(ev), Ltg(grp)
+        all_grp.append(grp)
+
+    all_ev = pd.concat(all_ev, ignore_index=True)
+    all_grp = pd.concat(all_grp, ignore_index=True)
+
+    return Ltg(ev), Ltg(all_grp)
 
 def read_events_nc(files):
     """
