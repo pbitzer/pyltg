@@ -65,7 +65,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
-from glmtools.io.glm import GLMDataset
+try:
+    import glmtools.io.glm as glmt
+except ImportError as err:
+    print("**** Unable to find glmtools. You'll have limited lunctionality for GLM data ****")
+
+    # To enable functionality that doesn't depend on glmtools, we will
+    # create a dummy class to "catch" anything that tries to use it.
+    # The only thing glmtools is used for (currently) is to enable reading
+    # in GLM operational data.
+
+    # Note: we might have to move this to somewhere else if glmtools
+    # is ever used in another module
+    class DummyGlmtools():
+        def __getattr__(self, attr):
+            raise RuntimeError('glmtools not installed')
+
+    glmt = DummyGlmtools()  # variable name should match the import...as above
 
 from pyltg.core.baseclass import Ltg
 
@@ -589,7 +605,7 @@ class GLM():
         for _file in files:
             # Extract the GLM data. Since we'll handle the parent-child
             # relationship, don't do it here.
-            this_glm = GLMDataset(_file, calculate_parent_child=False)
+            this_glm = glmt.GLMDataset(_file, calculate_parent_child=False)
 
             # Some GLM files have no data. Check for these cases:
             # todo: do we need to check groups and flashes too?
