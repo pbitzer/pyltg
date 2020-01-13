@@ -65,6 +65,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
+from pyltg.core.satellite import get_children
+
 try:
     import glmtools.io.glm as glmt
 except ImportError as err:
@@ -371,7 +373,6 @@ def event_poly(events, latlon=True,
     poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
 
     return poly
-
 
 def energy_colors(energies):
     """
@@ -711,9 +712,7 @@ class GLM():
 
         """
 
-        group_ids = np.atleast_1d(group_ids)
-
-        evs = [self.events[self.events.parent_id == _id] for _id in group_ids]
+        evs = get_children(group_ids, self.events)
 
         if combine:
             evs = pd.concat(evs)
