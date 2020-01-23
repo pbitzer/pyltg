@@ -205,8 +205,8 @@ class HAMMA(Ltg):
         """
         Read the given file.
 
-        If all the passed files are empty (i.e., no data) then HAMMA.data
-        will be None.
+        If all the passed files are empty (i.e., no data) then then the `len`
+        of the class is 0.
 
         Parameters
         ----------
