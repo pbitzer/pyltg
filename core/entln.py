@@ -167,23 +167,20 @@ def split_file(file):
         "two" extensions (e.g., `.csv.gz`)
 
     """
-    #
 
     import gzip
     from os.path import splitext
 
-    curr_hr = -1
-    new_data = list()
+    # Because pulses could be out of order, we going to load everythin
+    # into a dictionary of lists, separated by hour. Then, we'll write
+    # everything out.
+
+    data = {x:list() for x in np.arange(24)}
 
     # Get basefilename with path, but w/o extension.
     # Assume multiple extensions (e.g., basename.csv.gz)
     basename, ext1 = splitext(file)
     basename, ext2 = splitext(basename)
-
-    def _write_file(new_name, data_to_write):
-        with gzip.open(new_name+'.gz', 'wt') as _newf:
-            for item in data_to_write:
-                _newf.write("%s\n" % item)
 
     # Open the file
     with gzip.open(file, 'rt') as _f:
@@ -191,28 +188,25 @@ def split_file(file):
         # every new file.
         hdr = _f.readline()
 
+        # Put the header in each list:
+        for key, val in data.items():
+            data[key].append(hdr)
+
         # Now, we'll go about reading each line (sigh)
         for line in _f:
             this_date = line.split(',')[4]
             _, hms = this_date.split('T')
             this_hr = int(hms[0:2])
 
-            if this_hr != curr_hr:
+            data[this_hr].append(line)
 
-                # Write data to file, if there's something to write
-                if len(new_data) != 0:
-                    new_filename = basename + '_{:02}'.format(curr_hr) + ext2
-                    _write_file(new_filename, new_data)
+    # At this point, we have all the data. Write the files, But first,
+    # get a helper function (relic from old code)
+    def _write_file(new_name, data_to_write):
+        with gzip.open(new_name+'.gz', 'wt') as _newf:
+            for item in data_to_write:
+                _newf.write("%s\n" % item)
 
-                # Start a new list to write to file.
-                curr_hr = int(this_hr)
-                new_data = list()
-                new_data.append(hdr)
-
-            new_data.append(line)
-
-        # At the end, so check if we have data, and if so, write the data
-        # TODO: this code is exactly the same as above, so refactor
-        if len(new_data) != 0:
-            new_filename = basename + '_{:02}'.format(curr_hr) + ext2
-            _write_file(new_filename, new_data)
+    for hr, val in data.items():
+        new_filename = basename + '_{:02}'.format(hr) + ext2
+        _write_file(new_filename, val)
