@@ -198,8 +198,6 @@ class HAMMA(Ltg):
 
         super().__init__()  # initialize the inherited baseclass
 
-        self._data = None
-
         if files is not None:
             self.readFile(files)
 

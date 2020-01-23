@@ -574,9 +574,9 @@ class GLM():
             The file(s) to be read in.
         """
 
-        self.events = None
-        self.groups = None
-        self.flashes = None
+        self.events = Ltg()
+        self.groups = Ltg()
+        self.flashes = Ltg()
         if files is not None:
             self.readFile(files)
 
