@@ -105,7 +105,7 @@ class Ltg(object):
 
         # If there's no record, we need to "initialize" the property a little differently...
         if nRec == 0:
-            self._data = self.data.append(data, ignore_index=True)
+            self._data = self.data.append(data, ignore_index=True, sort=False)
         else:
             # TODO: make sure the record columns match the existing ones
             self._data.loc[nRec] = data
