@@ -16,7 +16,7 @@ class Ltg(object):
 
     def __init__(self, *args, **kwargs):
         self._data = pd.DataFrame(*args, **kwargs)  # initialize to an empty DataFrame
-        
+
         # Check to see if 'alt' is included. If not, add it:
         # todo: check for other columns
         if 'alt' not in self._data.columns:
@@ -24,12 +24,12 @@ class Ltg(object):
 
     def __len__(self):
         return self._data.shape[0]
-        
+
     def __getattr__(self, name):
-        # Override the get attribute to get the column name 
+        # Override the get attribute to get the column name
         # of the data DataFrame:
 
-        # We need to catch calls to access the (class) attribute data, 
+        # We need to catch calls to access the (class) attribute data,
         # else we'll end up with inifinite recursion when finding a column
         # (seems to affect pickling mostly)
         if name == 'data' or name == '_data':
@@ -69,7 +69,7 @@ class Ltg(object):
 
         .. note::
             This isn't typically used outside of core developers.
-        
+
         Parameters
         ----------
         field_name : str
@@ -80,7 +80,7 @@ class Ltg(object):
 
         # TODO: make sure the number of data matches existing element
         self._data[field_name] = data
-        
+
     def addRecord(self, data):
         """
         Add a record (i.e., row) to the Dataframe.
@@ -100,23 +100,23 @@ class Ltg(object):
         -------
 
         """
-        #
+
         nRec = len(self._data)
-        
+
         # If there's no record, we need to "initialize" the property a little differently...
         if nRec == 0:
             self._data = self.data.append(data, ignore_index=True)
         else:
-            # TODO:make sure the record columns match the existing ones
+            # TODO: make sure the record columns match the existing ones
             self._data.loc[nRec] = data
-        
+
     def limit(self, **kwargs):
         """
         Limit the underlying data based on the inputs.
 
         To use this, pass in the data attributes of the data to be limited and
         their range, e.g.,::
-            
+
             Ltg.limit(lat = [30, 40])
 
         Parameters
@@ -132,8 +132,8 @@ class Ltg(object):
             limited values.
 
         """
-        # Pass in the data attributes of the data to be limited and their range, 
-        # e.g., 
+        # Pass in the data attributes of the data to be limited and their range,
+        # e.g.,
         # Ltg.limit(lat = [30, 40])
         # will return the indices of the data with lats between 30,40
         # Any attribute in the data will work.
@@ -151,17 +151,17 @@ class Ltg(object):
             except KeyError:
                 print(arg + ' is an invalid data attribute name. Skipping...')
                 continue
-                
+
             # For the time field, be careful with type. Sometimes, a datetime64
             # might be passed in as a keyword, others an int64
             if arg is 'time':
                 thisData = thisData.astype('int64')
-                
+
                 if type(val[0]) is not 'int64':
                     val = np.array(val).astype('int64')
             boolVal = boolVal & (thisData >= val[0]) & (thisData <= val[1])
-            
+
         idx = np.where(boolVal)
         count = np.count_nonzero(boolVal)
-            
+
         return idx, count
