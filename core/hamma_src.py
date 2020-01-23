@@ -248,7 +248,7 @@ class HAMMA(Ltg):
 
         self._data['lat'] = lla.lat
         self._data['lon'] = lla.lon
-        self._data['alt'] = lla.alt
+        self._data['alt'] = lla.alt/1e3
 
         # todo: drop x,y,z
 
