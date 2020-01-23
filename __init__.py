@@ -11,3 +11,5 @@ from pyltg.core.entln import ENTLN
 from pyltg.core.nldn import NLDN
 
 from pyltg.core.glm import GLM
+
+from pyltg.core.hamma_src import HAMMA
