@@ -62,6 +62,9 @@ class ENTLN(Ltg):
             The file name to be read in.
 
         """
+
+        super().__init__()  # initialize the inherited baseclass
+
         if filename is not None:
             self.readFile(filename)
 
