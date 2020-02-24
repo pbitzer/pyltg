@@ -266,7 +266,7 @@ def array2record(loc):
     Parameters
     ----------
     loc : NumPy array
-        A x-by-3 NumPy array.
+        A n-by-3 NumPy array.
 
     Returns
     -------
