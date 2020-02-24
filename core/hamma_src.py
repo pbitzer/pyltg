@@ -253,3 +253,48 @@ class HAMMA(Ltg):
         # todo: drop x,y,z
 
         # todo: drop arrival times
+
+    def get_arrival_times(self, idx):
+        """
+        Get the arrival times for a particular source(s).
+
+        Sensors that don't participate will be NaN'd
+
+        Parameters
+        ----------
+        idx : scalar or list/1D array
+            The row(s) corresponding to the sources you want the
+            arrival times for.
+
+        Returns
+        -------
+        times: NumPy array
+            The arrival times corresponding to the sources requested.
+            If a scalar is used for `idx`, get an n-element array where `n`
+            is the number of arrival times (sensors).
+            Otherwise, get a m-by-n array, where `m` is the number of sources.
+            Sensors that don't participate will be NaN'd.
+
+        """
+
+        col_names = [col for col in self.data.columns if col.startswith('arrival')]
+
+
+        if np.isscalar(idx):
+            n_locations = 1
+
+        else:
+            n_locations = len(idx)
+
+        times = np.empty((n_locations, len(col_names)), dtype='float')
+
+        for i, col in enumerate(col_names):
+            times[:, i] = self.data.iloc[idx][col]
+
+        if np.isscalar(idx):
+            # get rid of the unused dim:
+            times = times.flatten()
+
+        times = np.where(times == 0.0, np.nan, times)
+
+        return times
