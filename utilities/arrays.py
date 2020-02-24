@@ -255,3 +255,30 @@ def xcorr(data1, data2, times1=None, times2=None):
     loc = -lags[max_ind] * dist_per_lag
         
     return loc, lags, cross_corr
+
+def array2record(loc):
+    """
+    Convert a 3D array to a NumPy record array with fields `x, y, z`
+
+    This provides a (relatively) easy way to get a record array suitable
+    for locations used in, say, `source_retrieval`.
+
+    Parameters
+    ----------
+    loc : NumPy array
+        A x-by-3 NumPy array.
+
+    Returns
+    -------
+    loc : NumPy record array
+        A record array with fields `x, y, z` corresponding to the
+        columns of the input.
+
+    """
+
+    loc = np.core.records.fromarrays(loc.T,
+                                     dtype=[('x', 'float64'),
+                                            ('y', 'float64'),
+                                            ('z', 'float64')])
+
+    return loc
