@@ -267,6 +267,14 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
 
     """
 
+    # First, look for bad data:
+    idx = ~np.isnan(times)
+
+    times = times[idx]
+    x = x[idx]
+    y = y[idx]
+    z = z[idx]
+
     if guess is None:
         guess, tOffset = initial_guess(times)
 
