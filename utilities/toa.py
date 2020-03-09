@@ -138,7 +138,7 @@ def default_param(guess, minTime, tOffset):
     params.add('t', value=guess[0], max=minTime-tOffset)
     params.add('x', value=guess[1], min=-250., max=250.)
     params.add('y', value=guess[2], min=-250., max=250.)
-    params.add('z', value=guess[3], min=0., max=20.)
+    params.add('z', value=guess[3], min=-1., max=20.)
 
     return params
 
