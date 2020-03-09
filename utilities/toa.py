@@ -331,10 +331,16 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
     y = y[idx]
     z = z[idx]
 
-    if guess is None:
-        guess, tOffset = initial_guess(times)
+    if guess == 'simple':
+        guess = guess_simple(times)
+    elif guess is None:
+        guess = guess_koshak(x, y, z, times)
+        tOffset = min_time_msec(times)
+        guess[0] = guess[0]-tOffset
+    # Note: if neither of these are true, guess better be a 4 element list/array
 
     tOffset = min_time_msec(times)
+    guess[0] = guess[0] - tOffset
 
     if params is None:
         params = default_param(guess, times.min(), tOffset)
