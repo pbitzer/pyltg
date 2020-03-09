@@ -142,6 +142,72 @@ def default_param(guess, minTime, tOffset):
 
     return params
 
+def guess_koshak(x, y, z, times):
+    """
+    Provide a initial guess for the spacetime retreival using the
+    methodology in Koshak et al. (2004).
+
+    In Koshak et al. (2004), an analytic solution for a source spacetime
+    retrieval is provided, extending the results of
+    Koshak and Solakiewicz (1996). It depends on inverting a matrix based
+    on the geometry of the network and the arrival times.
+
+    Parameters
+    ----------
+    x : NumPy array
+        The Cartesian x location of the sensors (kilometers).
+    y : NumPy array
+        The Cartesian y location of the sensors (kilometers)..
+    z : NumPy array
+        The Cartesian z location of the sensors (kilometers)..
+    times : NumPy array
+        The arrival times to be used for the retrieval of the source
+        spacetime location.
+
+    Returns
+    -------
+    f : list
+        The [time, x, y, z] of the intitial guess of the retrieval.
+
+    """
+
+    # Which sensor is the "reference" sensor? In Koshak 2004, it is assumed
+    # to be sensor 1.
+    ref_sensor = np.nanargmin(times)
+
+    # All times are shifted to this arrival time:
+    _times = times - times[ref_sensor]
+
+    # Get the indices of the other sensors
+    sensor_idx = np.arange(len(times))
+    not_ref = sensor_idx != ref_sensor
+
+    # Define L_i, as defined "near" eq4 in Koshak 2004
+    Lsqr_ref = x[ref_sensor]**2 + y[ref_sensor]**2 + z[ref_sensor]**2
+
+    Lsqr = x[not_ref]**2 + y[not_ref]**2 + z[not_ref]**2
+
+
+    # These follow eqs 4-5 in Koshak 2004
+    g = 0.5*(Lsqr - SPEED_OF_LIGHT**2*_times[not_ref]**2 - Lsqr_ref)
+
+    # Note that we build the transpose of K (see eq 5), since it's easier
+    # in code. Since Transpose(Ktrans) = K, this works just fine...
+    Ktrans = np.array([x[not_ref]-x[ref_sensor],
+                       y[not_ref]-y[ref_sensor],
+                       z[not_ref]-z[ref_sensor],
+                       -SPEED_OF_LIGHT*_times[not_ref]
+                       ])
+
+    # Eq 6 in Koshak 2004 (note "@" is matrix multiplication)
+    f = np.linalg.inv(Ktrans@Ktrans.T)@Ktrans@g
+
+    # For consistency with other functions here, reorder and modify
+    # to return [t, x, y, z] with t the "absolute" time
+
+    f = [f[3]/SPEED_OF_LIGHT+times[ref_sensor], f[0], f[1], f[2]]
+
+    return f
 
 def min_time_msec(times):
     """
