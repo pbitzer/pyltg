@@ -45,6 +45,8 @@ import numpy as np
 
 import lmfit
 
+SPEED_OF_LIGHT = 2.99792458e5/1.0002  # km/sec, matches that used in LMA algorithm
+
 def toa_model(param, x, y, z, times=None, err=None):
     r"""
     Define a model consistent with lmfit for time of arrival.
@@ -91,9 +93,7 @@ def toa_model(param, x, y, z, times=None, err=None):
 
     """
 
-    C_INVERSE = 1/3e5 #km/sec
-
-    model = param['t'] + C_INVERSE * np.sqrt(
+    model = param['t'] + 1/SPEED_OF_LIGHT * np.sqrt(
             (x-param['x'])**2 +
             (y-param['y'])**2 +
             (z-param['z'])**2)
