@@ -229,15 +229,14 @@ def min_time_msec(times):
 
     return tOffset
 
-
-def initial_guess(times, x=0., y=0., z=5.):
+def guess_simple(times, x=0., y=0., z=5.):
     """
-    Format an initial guess for the parameters of a source location.
 
     When doing TOA, we can have a number-size mismatch for times and spatial
     values: x,y,z are on the order of 100, while times (in seconds
     past midnight) are several orders of magnitude bigger. So, this will
     offset a set of these arrival times so that we have a better size match.
+    Format a simple initial guess for the parameters of a source location.
 
     The intital guess for the time parameter will be 100 us before the
     minimum arrival time.
@@ -257,24 +256,15 @@ def initial_guess(times, x=0., y=0., z=5.):
     -------
     guess : tuple
         The (t, x, y, z) of the guess parameters.
-    tOffset : float
-        The time offset used (i.e., the time subtracted from) the arrival
-        `times`.
-
     """
 
-    # Get the minimum time, to the nearest msec.
-    # This will be the amount that we offset the arrival times:
-    tOffset = min_time_msec(times)
-
-    #now get the earliest arrival time
+    #Get the earliest arrival time
     minTime = np.min(times)
 
     # Default guess is 100us before the min arrival time
-    guess = (minTime-tOffset-100e-6, x, y, z)
+    guess = [minTime-100e-6, x, y, z]
 
-    return guess, tOffset
-
+    return guess
 
 def source_retrieval(times, x, y, z, params=None, guess=None,
                      fullResult=True, keys=None, err=1e-7):
