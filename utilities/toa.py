@@ -3,10 +3,16 @@
 
 """
 This module is for functions related to time-of-arrival (TOA) calculations.
+The source spacetime retrieval (i.e., the determination of the source
+location from a set of arrival times) is largely built around the package
+`lmfit <https://lmfit.github.io/lmfit-py/>`_
+(`<https://dx.doi.org/10.5281/zenodo.11813>`_)
 
 Any spatial locations should be provided in kilometers (including height).
 
-It is largely built around the package `lmfit`.
+This contains a module level constant for the speed of light. Currently, the
+value used is the same as processing for the Lightning Mapping Array
+(Thomas et al., 2004) and is effectively `c/1.0002`.
 
 Examples
 ---------
@@ -45,14 +51,19 @@ import numpy as np
 
 import lmfit
 
+SPEED_OF_LIGHT = 2.99792458e5/1.0002  # km/sec, matches that used in LMA algorithm
+
 def toa_model(param, x, y, z, times=None, err=None):
     r"""
     Define a model consistent with lmfit for time of arrival.
 
-    This is written in such a way in can be used in three primary ways::
-        1) If times is None, return the arrival times
-        2) If err is None (and times is not), return the residual ((arrival time - measured times))
-        3) If err is not None and times is not None, divide the residual by the error(s)
+    This is written in such a way that it can be used in three primary ways:
+
+        1) If `times` is None, return the arrival times
+        2) If `err` is `None` (and times is not), return the
+           residual ((arrival time - measured times))
+        3) If `err` is not `None` and times is not `None`,
+           divide the residual by the error(s)
 
     The general time-of-arrival equation is:
 
@@ -91,9 +102,7 @@ def toa_model(param, x, y, z, times=None, err=None):
 
     """
 
-    C_INVERSE = 1/3e5 #km/sec
-
-    model = param['t'] + C_INVERSE * np.sqrt(
+    model = param['t'] + 1/SPEED_OF_LIGHT * np.sqrt(
             (x-param['x'])**2 +
             (y-param['y'])**2 +
             (z-param['z'])**2)
@@ -105,16 +114,16 @@ def toa_model(param, x, y, z, times=None, err=None):
 
     return (model-times)/err
 
-
 def default_param(guess, minTime, tOffset):
     """
     Get a set of default parameters to be used in `toa_model`.
 
-    The paramters will be constrained::
-        t: No minimum, maximum set by `minTime`
-        x: [-250, 250]
-        y: [-250, 250]
-        z: [0, 20]
+    The paramters will be constrained as:
+
+        * `t:` No minimum, maximum set by `minTime`
+        * `x: [-250, 250]`
+        * `y: [-250, 250]`
+        * `z: [0, 20]`
 
     Parameters
     ----------
@@ -123,25 +132,92 @@ def default_param(guess, minTime, tOffset):
     minTime : float
         The maximum value the parameter time can take.
     tOffset : float
-        The offset for the times. Usually the nearest millisecond.
+        The offset for the times. Usually to the millisecond.
 
     Returns
     -------
-    params : lmfit Parameter
-        A Parameter class suitable for use with `lmfit`.
+    params : `lmfit Parameter <https://lmfit.github.io/lmfit-py/parameters.html>`_
+        A lmfit Parameter class suitable for use with :func:`toa_model` and,
+        more generally, `lmfit`.
 
     """
 
-    #get the default parameter dict for lmfit
+    # Get a default parameter dict for lmfit
     params = lmfit.Parameters()
 
     params.add('t', value=guess[0], max=minTime-tOffset)
     params.add('x', value=guess[1], min=-250., max=250.)
     params.add('y', value=guess[2], min=-250., max=250.)
-    params.add('z', value=guess[3], min=0., max=20.)
+    params.add('z', value=guess[3], min=-1., max=20.)
 
     return params
 
+def guess_koshak(x, y, z, times):
+    """
+    Provide a initial guess for the spacetime retreival using the
+    methodology in Koshak et al. (2004).
+
+    In Koshak et al. (2004), an analytic solution for a source spacetime
+    retrieval is provided, extending the results of
+    Koshak and Solakiewicz (1996). It depends on inverting a matrix based
+    on the geometry of the network and the arrival times.
+
+    Parameters
+    ----------
+    x : NumPy array
+        The Cartesian x location of the sensors (kilometers).
+    y : NumPy array
+        The Cartesian y location of the sensors (kilometers)..
+    z : NumPy array
+        The Cartesian z location of the sensors (kilometers)..
+    times : NumPy array
+        The arrival times to be used for the retrieval of the source
+        spacetime location.
+
+    Returns
+    -------
+    list
+        The [time, x, y, z] of the intitial guess of the retrieval.
+
+    """
+
+    # Which sensor is the "reference" sensor? In Koshak 2004, it is assumed
+    # to be sensor 1.
+    ref_sensor = np.nanargmin(times)
+
+    # All times are shifted to this arrival time:
+    _times = times - times[ref_sensor]
+
+    # Get the indices of the other sensors
+    sensor_idx = np.arange(len(times))
+    not_ref = sensor_idx != ref_sensor
+
+    # Define L_i, as defined "near" eq4 in Koshak 2004
+    Lsqr_ref = x[ref_sensor]**2 + y[ref_sensor]**2 + z[ref_sensor]**2
+
+    Lsqr = x[not_ref]**2 + y[not_ref]**2 + z[not_ref]**2
+
+
+    # These follow eqs 4-5 in Koshak 2004
+    g = 0.5*(Lsqr - SPEED_OF_LIGHT**2*_times[not_ref]**2 - Lsqr_ref)
+
+    # Note that we build the transpose of K (see eq 5), since it's easier
+    # in code. Since Transpose(Ktrans) = K, this works just fine...
+    Ktrans = np.array([x[not_ref]-x[ref_sensor],
+                       y[not_ref]-y[ref_sensor],
+                       z[not_ref]-z[ref_sensor],
+                       -SPEED_OF_LIGHT*_times[not_ref]
+                       ])
+
+    # Eq 6 in Koshak 2004 (note "@" is matrix multiplication)
+    f = np.linalg.inv(Ktrans@Ktrans.T)@Ktrans@g
+
+    # For consistency with other functions here, reorder and modify
+    # to return [t, x, y, z] with t the "absolute" time
+
+    f = [f[3]/SPEED_OF_LIGHT+times[ref_sensor], f[0], f[1], f[2]]
+
+    return f
 
 def min_time_msec(times):
     """
@@ -154,24 +230,18 @@ def min_time_msec(times):
 
     Returns
     -------
-    tOffset : float
+    float
         The minimum of `times`, rounded to the nearest millisecond.
 
     """
-    #simple function to calculate the minimum time to the msec
+
     tOffset = np.min(np.floor(times*1e3))/1e3
 
     return tOffset
 
-
-def initial_guess(times, x=0., y=0., z=5.):
+def guess_simple(times, x=0., y=0., z=5.):
     """
-    Format an initial guess for the parameters of a source location.
-
-    When doing TOA, we can have a number-size mismatch for times and spatial
-    values: x,y,z are on the order of 100, while times (in seconds
-    past midnight) are several orders of magnitude bigger. So, this will
-    offset a set of these arrival times so that we have a better size match.
+    Format a simple initial guess for the parameters of a source location.
 
     The intital guess for the time parameter will be 100 us before the
     minimum arrival time.
@@ -189,26 +259,17 @@ def initial_guess(times, x=0., y=0., z=5.):
 
     Returns
     -------
-    guess : tuple
+    tuple
         The (t, x, y, z) of the guess parameters.
-    tOffset : float
-        The time offset used (i.e., the time subtracted from) the arrival
-        `times`.
-
     """
 
-    # Get the minimum time, to the nearest msec.
-    # This will be the amount that we offset the arrival times:
-    tOffset = min_time_msec(times)
-
-    #now get the earliest arrival time
+    #Get the earliest arrival time
     minTime = np.min(times)
 
     # Default guess is 100us before the min arrival time
-    guess = (minTime-tOffset-100e-6, x, y, z)
+    guess = [minTime-100e-6, x, y, z]
 
-    return guess, tOffset
-
+    return guess
 
 def source_retrieval(times, x, y, z, params=None, guess=None,
                      fullResult=True, keys=None, err=1e-7):
@@ -228,7 +289,14 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
         \tau_i = \frac{t_m}{c} + \sqrt{(x_i-x_m)^2 + (y_i-y_m)^2 + (z_i-z_m)^2}
 
     and :math:`t_m, x_m, y_m, z_m` are the model parameters for the source
-    spacetime poistion (i.e., :math`\tau_i` is the modelled arrival time).
+    spacetime poistion (i.e., :math:`\tau_i` is the modelled arrival time).
+
+    When doing TOA, we can have a number-size mismatch for times and spatial
+    values: x,y,z are on the order of 100, while times (in seconds
+    past midnight) are several orders of magnitude bigger. So, this function
+    will offset the arrival times (and any guess) so that we have a better
+    size match.
+
 
     Parameters
     ----------
@@ -242,16 +310,21 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
         A n-element array containing the `z` position of the sensors in km.
     params : lmfit Parameter, optional
         The parameters to use as the initial guess. If `None`, then
-        :func:`default_param` will be used.
-    guess : list/tuple/array, optional
-        The (t, x, y, z) to be used for the initial guess. If `None`, then
-        :func:`initial_guess` will be called with the provided `times`.
+        :func:`default_param` will be used, using the `guess` as the input.
+    guess : list/array or string, optional
+        The `(t, x, y, z)` to be used for the initial guess. Note that the
+        first element (the time) will modified with an offset.
+
+        If `None`, then :func:`guess_koshak` will be called with the
+        provided `times` and `x,y,z`. If `guess` is the string `'simple'`, then
+        :func:`guess_simple` will be used.
     fullResult : bool, optional
-        If `True`, return the lmfit MinimizerResult along with the solution. See
-        the output of `lmfit.minimize` for more.
+        If `True`, return the `lmfit MinimizerResult
+        <https://lmfit.github.io/lmfit-py/fitting.html#lmfit.minimizer.MinimizerResult>`_
+        along with the solution.
     keys : tuple/list, optional
-        The keys to extract from the result. If `None`, then the base
-         ('t', 'x', 'y', 'z') are extracted.
+        The keys to extract from the result. If `None`, then the
+        standard keys `('t', 'x', 'y', 'z')` are extracted.
     err : scalar or NumPy array, optional
         The error in the arrival times. If a scalar, this is used for
         all arrival times. The default is 1e-7.
@@ -260,10 +333,10 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
     -------
     NumPy array or tuple
         If `full_result` is True, then a tuple is returned:
-        (solution, lmfit.MinimizerResult).
+        `(solution, lmfit.MinimizerResult)`.
 
         If `full_result` is False, then just the solution is returned,
-        such that `solution = [t, x, y, z]`
+        where `solution = np.array([t, x, y, z])`
 
     """
 
@@ -275,10 +348,16 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
     y = y[idx]
     z = z[idx]
 
-    if guess is None:
-        guess, tOffset = initial_guess(times)
+    if guess == 'simple':
+        guess = guess_simple(times)
+    elif guess is None:
+        guess = guess_koshak(x, y, z, times)
+        tOffset = min_time_msec(times)
+        guess[0] = guess[0]-tOffset
+    # Note: if neither of these are true, guess better be a 4 element list/array
 
     tOffset = min_time_msec(times)
+    guess[0] = guess[0] - tOffset
 
     if params is None:
         params = default_param(guess, times.min(), tOffset)
