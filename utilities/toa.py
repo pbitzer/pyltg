@@ -3,10 +3,16 @@
 
 """
 This module is for functions related to time-of-arrival (TOA) calculations.
+The source spacetime retrieval (i.e., the determination of the source
+location from a set of arrival times) is largely built around the package
+`lmfit <https://lmfit.github.io/lmfit-py/>`_
+(`<https://dx.doi.org/10.5281/zenodo.11813>`_)
 
 Any spatial locations should be provided in kilometers (including height).
 
-It is largely built around the package `lmfit`.
+This contains a module level constant for the speed of light. Currently, the
+value used is the same as processing for the Lightning Mapping Array
+(Thomas et al., 2004) and is effectively `c/1.0002`.
 
 Examples
 ---------
@@ -51,10 +57,13 @@ def toa_model(param, x, y, z, times=None, err=None):
     r"""
     Define a model consistent with lmfit for time of arrival.
 
-    This is written in such a way in can be used in three primary ways::
-        1) If times is None, return the arrival times
-        2) If err is None (and times is not), return the residual ((arrival time - measured times))
-        3) If err is not None and times is not None, divide the residual by the error(s)
+    This is written in such a way that it can be used in three primary ways:
+
+        1) If `times` is None, return the arrival times
+        2) If `err` is `None` (and times is not), return the
+           residual ((arrival time - measured times))
+        3) If `err` is not `None` and times is not `None`,
+           divide the residual by the error(s)
 
     The general time-of-arrival equation is:
 
@@ -105,16 +114,16 @@ def toa_model(param, x, y, z, times=None, err=None):
 
     return (model-times)/err
 
-
 def default_param(guess, minTime, tOffset):
     """
     Get a set of default parameters to be used in `toa_model`.
 
-    The paramters will be constrained::
-        t: No minimum, maximum set by `minTime`
-        x: [-250, 250]
-        y: [-250, 250]
-        z: [0, 20]
+    The paramters will be constrained as:
+
+        * `t:` No minimum, maximum set by `minTime`
+        * `x: [-250, 250]`
+        * `y: [-250, 250]`
+        * `z: [0, 20]`
 
     Parameters
     ----------
@@ -123,16 +132,17 @@ def default_param(guess, minTime, tOffset):
     minTime : float
         The maximum value the parameter time can take.
     tOffset : float
-        The offset for the times. Usually the nearest millisecond.
+        The offset for the times. Usually to the millisecond.
 
     Returns
     -------
-    params : lmfit Parameter
-        A Parameter class suitable for use with `lmfit`.
+    params : `lmfit Parameter <https://lmfit.github.io/lmfit-py/parameters.html>`_
+        A lmfit Parameter class suitable for use with :func:`toa_model` and,
+        more generally, `lmfit`.
 
     """
 
-    #get the default parameter dict for lmfit
+    # Get a default parameter dict for lmfit
     params = lmfit.Parameters()
 
     params.add('t', value=guess[0], max=minTime-tOffset)
@@ -166,7 +176,7 @@ def guess_koshak(x, y, z, times):
 
     Returns
     -------
-    f : list
+    list
         The [time, x, y, z] of the intitial guess of the retrieval.
 
     """
@@ -220,22 +230,17 @@ def min_time_msec(times):
 
     Returns
     -------
-    tOffset : float
+    float
         The minimum of `times`, rounded to the nearest millisecond.
 
     """
-    #simple function to calculate the minimum time to the msec
+
     tOffset = np.min(np.floor(times*1e3))/1e3
 
     return tOffset
 
 def guess_simple(times, x=0., y=0., z=5.):
     """
-
-    When doing TOA, we can have a number-size mismatch for times and spatial
-    values: x,y,z are on the order of 100, while times (in seconds
-    past midnight) are several orders of magnitude bigger. So, this will
-    offset a set of these arrival times so that we have a better size match.
     Format a simple initial guess for the parameters of a source location.
 
     The intital guess for the time parameter will be 100 us before the
@@ -254,7 +259,7 @@ def guess_simple(times, x=0., y=0., z=5.):
 
     Returns
     -------
-    guess : tuple
+    tuple
         The (t, x, y, z) of the guess parameters.
     """
 
@@ -284,7 +289,14 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
         \tau_i = \frac{t_m}{c} + \sqrt{(x_i-x_m)^2 + (y_i-y_m)^2 + (z_i-z_m)^2}
 
     and :math:`t_m, x_m, y_m, z_m` are the model parameters for the source
-    spacetime poistion (i.e., :math`\tau_i` is the modelled arrival time).
+    spacetime poistion (i.e., :math:`\tau_i` is the modelled arrival time).
+
+    When doing TOA, we can have a number-size mismatch for times and spatial
+    values: x,y,z are on the order of 100, while times (in seconds
+    past midnight) are several orders of magnitude bigger. So, this function
+    will offset the arrival times (and any guess) so that we have a better
+    size match.
+
 
     Parameters
     ----------
@@ -298,16 +310,21 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
         A n-element array containing the `z` position of the sensors in km.
     params : lmfit Parameter, optional
         The parameters to use as the initial guess. If `None`, then
-        :func:`default_param` will be used.
-    guess : list/tuple/array, optional
-        The (t, x, y, z) to be used for the initial guess. If `None`, then
-        :func:`initial_guess` will be called with the provided `times`.
+        :func:`default_param` will be used, using the `guess` as the input.
+    guess : list/array or string, optional
+        The `(t, x, y, z)` to be used for the initial guess. Note that the
+        first element (the time) will modified with an offset.
+
+        If `None`, then :func:`guess_koshak` will be called with the
+        provided `times` and `x,y,z`. If `guess` is the string `'simple'`, then
+        :func:`guess_simple` will be used.
     fullResult : bool, optional
-        If `True`, return the lmfit MinimizerResult along with the solution. See
-        the output of `lmfit.minimize` for more.
+        If `True`, return the `lmfit MinimizerResult
+        <https://lmfit.github.io/lmfit-py/fitting.html#lmfit.minimizer.MinimizerResult>`_
+        along with the solution.
     keys : tuple/list, optional
-        The keys to extract from the result. If `None`, then the base
-         ('t', 'x', 'y', 'z') are extracted.
+        The keys to extract from the result. If `None`, then the
+        standard keys `('t', 'x', 'y', 'z')` are extracted.
     err : scalar or NumPy array, optional
         The error in the arrival times. If a scalar, this is used for
         all arrival times. The default is 1e-7.
@@ -316,10 +333,10 @@ def source_retrieval(times, x, y, z, params=None, guess=None,
     -------
     NumPy array or tuple
         If `full_result` is True, then a tuple is returned:
-        (solution, lmfit.MinimizerResult).
+        `(solution, lmfit.MinimizerResult)`.
 
         If `full_result` is False, then just the solution is returned,
-        such that `solution = [t, x, y, z]`
+        where `solution = np.array([t, x, y, z])`
 
     """
 
