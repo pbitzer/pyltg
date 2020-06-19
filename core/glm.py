@@ -606,7 +606,7 @@ class GLM():
         for _file in files:
             # Extract the GLM data. Since we'll handle the parent-child
             # relationship, don't do it here.
-            this_glm = glmt.GLMDataset(_file, calculate_parent_child=False)
+            this_glm = glmt.GLMDataset(_file, calculate_parent_child=False, change_energy_units=False)
 
             # Some GLM files have no data. Check for these cases:
             # todo: do we need to check groups and flashes too?
