@@ -66,6 +66,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
 from pyltg.core.satellite import get_children
+from pyltg.core.baseclass import Ltg
 
 try:
     import glmtools.io.glm as glmt
@@ -85,7 +86,6 @@ except ImportError as err:
 
     glmt = DummyGlmtools()  # variable name should match the import...as above
 
-from pyltg.core.baseclass import Ltg
 
 
 def _convert_lon_360_to_180(lons):
