@@ -715,7 +715,7 @@ class GLM():
         evs = get_children(group_ids, self.events)
 
         if combine:
-            evs = pd.concat(evs)
+            evs = pd.concat(evs, ignore_index=True)
 
         return evs
 
@@ -758,9 +758,9 @@ class GLM():
         # TODO: We can get all the events at once, if we have the ids as a list
 
         if combine:
-            grps = pd.concat(grps)
+            grps = pd.concat(grps, ignore_index=True)
             if events:
-                evs = pd.concat(evs)
+                evs = pd.concat(evs, ignore_index=True)
         if events:
             return evs, grps
         else:
