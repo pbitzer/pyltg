@@ -84,7 +84,6 @@ def rebin(arr, shape, scheme=None):
         else:
             raise ValueError("Invalid scheme for downsampling")
     elif not np.any(divisor_up[1]):
-        pass
         # For upsampling, we'll use scipy.ndimage.zoom
         if scheme == 'sample':
             order = 0
