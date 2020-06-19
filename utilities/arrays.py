@@ -5,6 +5,66 @@ Functions for various operations on numpy arrays
 
 import numpy as np
 
+
+def histo_bins(data, bins=None, min_val=None, max_val=None):
+    """
+    Get suitable bins for a histogram.
+
+    NumPy's histogram doesn't allow you to specify a particualar bin size,
+    only either the number of bins or the actual bins to use. One of the
+    purposes of this function is allow to generate the bins using a
+    particular bin size, which can then be passed into NumPy's histogram.
+
+    Parameters
+    ----------
+    data : NumPy array
+        The array of data to base the bins off of. Should be 1D. Can include
+        NaN's.
+    bins : varies, optional
+       If `None`, generate bins using Scott's choice. The default is None.
+       If a scalar, this is used for the bin size.
+       If it is an array, then these are used as the bins. Then, the only
+       thing this function really does is find a min/max value (unless those
+       are provided too, then this function does nothing!).
+    min_val : float, optional
+        The minimum value of data to consider when making the mins.
+        If `None`, the mininum of the data is used. The default is None.
+    max_val : TYPE, optional
+        The maximum value of data to consider when making the mins.
+        If `None`, the 95th percentile of the data is used. The default is None.
+
+    Returns
+    -------
+    min_val : float
+        The minimum value used to find the bins.
+    max_val : float
+        The maximum value used to find the bins.
+    bin_start : NumPy array
+        The starting edges of the bins.
+
+    """
+
+
+    # First, check for min/max values:
+    if min_val is None:
+        min_val = np.nanmin(data)
+    if max_val is None:
+        max_val = np.nanpercentile(data, 95)
+
+    if bins is None:
+        # No bins provided, so go get some using Scott's choice:
+        binsize = 3.5 * np.nanstd(data, ddof=1)/data.size**(1/3)
+        bin_start = np.arange(min_val, max_val, binsize)
+    elif np.ndim(bins) == 0:
+        # If it's not None, but a scalar, then it should be a binsize.
+        # So, we'll make the bins
+        bin_start = np.arange(min_val, max_val, bins)
+    else:
+        # Should be the actual bins, so what are you doing here?
+        bin_start = bins
+
+    return min_val, max_val, bin_start
+
 def rebin(arr, shape, scheme=None):
     """
     Given a input array, change the array such that the new array dimensions
