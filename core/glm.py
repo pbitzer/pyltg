@@ -524,7 +524,6 @@ def energy_colors(energies):
 
     return colors
 
-
 def filename2date(files):
     # Take a filename and get the start time
     import datetime, os
@@ -546,7 +545,6 @@ def filename2date(files):
         t0.append(start)
 
     return t0
-
 
 def _extract_groups(glmdata):
     """
@@ -582,7 +580,6 @@ def _extract_groups(glmdata):
 
     return data
 
-
 def _extract_events(glmdata):
     """
     Given a GLMDataset, extract events and relevant attributes
@@ -612,7 +609,6 @@ def _extract_events(glmdata):
 
     return data
 
-
 def _extract_flashes(glmdata):
     # Given a GLMDataset, extract flashes and relevant attributes
 
@@ -638,7 +634,6 @@ def _extract_flashes(glmdata):
     data['alt'] = 0.0
 
     return data
-
 
 def _get_child_count(parent, child):
     # Given a parent and child dataset, find the number of children for
