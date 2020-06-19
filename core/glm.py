@@ -60,6 +60,8 @@ Still to be done:
 
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -87,6 +89,98 @@ except ImportError as err:
     glmt = DummyGlmtools()  # variable name should match the import...as above
 
 
+def search_path(path, time_range, lon_range=None, lat_range=None):
+    """
+    Search the given path for GLM data that satisfy the given ranges.
+
+    This provides a way to search an archive of GLM data files for lightning
+    in the give time/space bounds.
+
+    Data is assumed to be in a folder structure path/doy/<sub_dirs>/<glm_files>
+
+    Note: Time range can't cross dates (yet)
+
+    Parameters
+    ----------
+    path : str
+        The path to be searched. See above doc for assumed directory structure
+        under this path. Will be passed to `pathlib.Path`
+    time_range : list-like
+        2 element iterable specifying the start/stop time you're interested in.
+        The values are passed to `pandas.Timestamp`.
+    lon_range : list-like, optional
+        2 element iterable providing the longitude range. The default is None.
+        If None, all longitudes are considered.
+    lat_range : list-like, optional
+        2 element iterable providing the latitude range. The default is None.
+        If None, all latitudes are considered.
+
+    Returns
+    -------
+    GLM
+        A pyltg.GLM class with the data that satisfies the given ranges.
+
+    """
+
+    time_range = [pd.Timestamp(t) for t in time_range]
+
+    # First, go the day-of-year folder.
+    doy = time_range[0].dayofyear
+
+    search_path = Path(path).joinpath('{:03}'.format(doy))
+
+    all_files = np.array(sorted(search_path.rglob('OR_GLM*')))
+
+    times = np.array(filename2date(all_files))
+
+    # To make sure we don't miss any files, buffer the times a bit.
+    # Since GLM files are 20 seconds, this should be sufficient.
+    # We'll make it a little bigger just to be sure...
+    BUFFER = pd.Timedelta(30, 's')
+
+    idx = (times >= (time_range[0]-BUFFER)) & (times <= (time_range[1]+BUFFER))
+
+    if not np.count_nonzero(idx):
+        print('No files found')
+        return None
+
+    # These are the files that should contain our range.
+    files = all_files[idx]
+
+    all_g = GLM(files)
+
+    fl_t = all_g.flashes.time
+
+    # Sigh, can't do datetime64[ns] and Timestamp.
+    # And, we don't have an quick way to convert an array of datetime64 to Timestamp.
+    good_idx = (fl_t >= np.datetime64(time_range[0])) & (fl_t <= np.datetime64(time_range[1]))
+
+    if lat_range is not None:
+        fl_lat = all_g.flashes.lat
+        lat_idx = (fl_lat >= lat_range[0]) & (fl_lat <= lat_range[1])
+
+        good_idx = good_idx & lat_idx
+
+    if lon_range is not None:
+        fl_lon = all_g.flashes.lon
+        lon_idx = (fl_lon >= lon_range[0]) & (fl_lon <= lon_range[1])
+
+        good_idx = good_idx & lon_idx
+    # Make sure we have _something_
+    if not np.count_nonzero(good_idx):
+        print('No data found in provided range')
+        return None
+    else:
+        fl = all_g.flashes[good_idx]
+
+        ev, grp = all_g.get_groups(fl.id, combine=True, events=True)
+
+        g = GLM()
+        g.flashes = Ltg(fl)
+        g.groups = Ltg(grp)
+        g.events = Ltg(ev)
+
+        return g
 
 def _convert_lon_360_to_180(lons):
     # Small helper to convert a set of 0->360 lons to -180->180
