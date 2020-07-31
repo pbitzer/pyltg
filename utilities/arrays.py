@@ -6,6 +6,83 @@ Functions for various operations on numpy arrays
 import numpy as np
 
 
+def perturb_points(x, y, delta=1, npts=16):
+    """
+    Draw a circle of points around a set of points.
+
+    Given a set of points, effectively perturb them by drawing a circle
+    of points around each. Useful for "expanding" a convex hull.
+
+    Parameters
+    ----------
+    x : array-like
+        The x-locations of the points
+    y : array-like
+        The y-locations of the points
+    delta : numeric, optional
+        The radius of points to draw around each input point. The default is 1.
+    npts : int, optional
+        The number of points to draw around each input point. The default is 16.
+
+    Returns
+    -------
+    px : np.array
+        The x-location of pertubed points, including the original points.
+    py : np.array
+        The y-location of pertubed points, including the original points.
+
+    """
+
+    npts = 16  # Number of points in the circle around each vertex
+    theta = np.linspace(0, 2*np.pi, npts)
+
+    dx = delta*np.cos(theta)
+    dy = delta*np.sin(theta)
+
+    px = np.broadcast_to(x, (npts, len(x))).copy()
+    py = np.broadcast_to(y, (npts, len(y))).copy()
+
+    px += dx[:, np.newaxis]
+    py += dy[:, np.newaxis]
+
+    px = px.flatten()
+    py = py.flatten()
+
+    return px, py
+
+
+def hull_get_path(hull):
+    """
+    Given a ConvexHull using `scipy.spatial`, get the path defined by the vertices.
+
+    Often we want to do something with a `ConvexHull` (like plot). This is a
+    convenience function that gets the vertices and returns them as arrays.
+
+    The path is closed (i.e., the last point returned is also the first point.)
+
+    Parameters
+    ----------
+    hull : scipy.spatial.qhull.ConvexHull
+        The convex hull
+
+    Returns
+    -------
+    path_x : np.array
+        The x locations of the hull.
+    path_y : np.array
+        The y locations of the hull.
+
+    """
+
+    path_x = np.append(hull.points[hull.vertices, 0],
+                       hull.points[hull.vertices[0], 0])
+
+    path_y = np.append(hull.points[hull.vertices, 1],
+                       hull.points[hull.vertices[0], 1])
+
+    return path_x, path_y
+
+
 def histo_bins(data, bins=None, min_val=None, max_val=None):
     """
     Get suitable bins for a histogram.
