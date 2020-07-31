@@ -39,7 +39,7 @@ class Ltg(object):
             return self._data[name].values
             # todo: try/except?
         else:
-            raise AttributeError('Unknown column name. Valid ones: ' + ', '.join(self._data.columns))
+            raise AttributeError('Unknown column name: ' + name + '. Valid ones: ' + ', '.join(self._data.columns))
 
     def __getitem__(self, key):
         """
