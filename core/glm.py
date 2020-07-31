@@ -529,7 +529,7 @@ def filename2date(files):
     import datetime, os
 
     t0 = list()
-    for _f in files:
+    for _f in np.atleast_1d(files):
 
         this_file = os.path.splitext(_f)[0]
 
