@@ -13,7 +13,7 @@ The "core" classes correspond to the various lightning instrumentats/data source
 
 ### Installing ###
 
-* Clone the repository
+* Clone the repository [https://bitbucket.org/uah_ltg/pyltg]
 * Go to the `pyltg` directory created and install it with pip:
 ```
 pip install -e .
