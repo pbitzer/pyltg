@@ -1,1 +1,3 @@
 *.pyc
+pyltg.egg-info
+docs
