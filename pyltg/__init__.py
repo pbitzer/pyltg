@@ -3,6 +3,7 @@
 """
 pyltg (Python Lightning) Package 
 """
+__version__ = "0.1"
 
 from pyltg.core.lma import LMA
 
