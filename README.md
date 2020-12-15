@@ -30,8 +30,8 @@ conda env create environment.yml
 ```
 * For full use of Geostationary Lightning Mapper (GLM) code, you should also 
 install `glmtools`  [https://github.com/deeplycloudy/glmtools]. While you
-can follow the installation discussed there, you can also simply clone this 
-repository and install it with `pip install -e .` as well (from within
+can follow the installation discussed there, you can also simply clone the 
+repository and install it with `pip install -e .`  (from within
 the `glmtools` directory created after cloning.)
 
 ### Basic Use ###
@@ -68,8 +68,8 @@ my_time = lma.time
 
 ### Caveats, Gotchas, etc ###
 
-* Under the hood, the data is maintained in a pandas Dataframe, but for the most part you won't need to interact at that level.
-* There is a `baseclass` class that is inherited by all the others. Most users have no need for this. Instead, go straight to the class you need.
+* Under the hood, the data is maintained in a Pandas Dataframe, but for the most part you won't need to interact at that level.
+* There is a `baseclass` class that is inherited by all the others. Most users have no need for this. Instead, go straight to the class corresponding to the lightning data you're using.
 
 ### Issues ###
 If you run into a bug, please report it [https://bitbucket.org/uah_ltg/pyltg/issues]
