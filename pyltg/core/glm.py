@@ -67,7 +67,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
-from pyltg.core.satellite import get_children
+from pyltg.core.satellite import get_children, energy_colors
 from pyltg.core.baseclass import Ltg
 
 try:
@@ -460,69 +460,13 @@ def event_poly(events, latlon=True,
 
     if fill:
         # todo: here, we would pick a different color scheme
-        colors = energy_colors(events.energy.values)/255
+        colors = energy_colors(events.energy.values, satellite='GLM')/255
     else:
         colors = 'none'
 
     poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
 
     return poly
-
-def energy_colors(energies):
-    """
-    Map the given GLM energies to a set of 256 colors.
-
-    Energies are scaled between 1 fJ and 50 fJ. #todo change this to keyword
-
-    .. note::
-        Right now, the only color scale available to use a yellow->red. Others
-        will be added later.
-
-    Parameters
-    ----------
-    energies n element array-like
-
-    Returns
-    -------
-    array :
-        nx3 NumPy array of bytes. The last dimension corresponds to RGB
-        values.
-
-    """
-    # get RGB values that correspond to the energies.
-    min_val = 1e-15
-    max_val = 5e-14
-
-    _min_val = np.log10(min_val)
-    _max_val = np.log10(max_val)
-    _values = np.log10(energies)
-
-    # linear scale
-    m = (255-0)/(_max_val-_min_val)
-    b = 255.-m * _max_val
-
-    scl_colors = m*_values+b
-
-    # First, clip to bounds:
-    scl_colors = np.clip(scl_colors, 0, 255)
-    # Make it a byte for indexing
-    scl_colors = np.uint8(scl_colors)
-
-    colors = np.zeros((len(_values), 3))
-
-    nsteps = 256
-    redV = np.repeat(np.uint8(255), nsteps)
-    blueV = np.repeat(np.uint8(0), nsteps)
-    scale = np.arange(nsteps)/(nsteps-1)
-    n0 = 255
-    n1 = 0
-    greenV = np.uint8(n0 + (n1-n0) * scale)
-
-    colors[:, 0] = redV[scl_colors]
-    colors[:, 1] = greenV[scl_colors]
-    colors[:, 2] = blueV[scl_colors]
-
-    return colors
 
 def filename2date(files):
     # Take a filename and get the start time
