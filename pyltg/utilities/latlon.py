@@ -75,14 +75,17 @@ def lla2enu(lats, lons, alts, center=None):
     ecefProj = pyproj.Proj(proj='geocent',  ellps='WGS84', datum='WGS84')
     llaProj = pyproj.Proj(proj='latlong', ellps='WGS84', datum='WGS84')
 
+    # Define the transform:
+    lla2ecef_xform = pyproj.Transformer.from_proj(llaProj, ecefProj)
+
     # First, convert to ECEF
-    ecef = np.array(pyproj.transform(llaProj, ecefProj, lons, lats, alts))
+    ecef = np.array(lla2ecef_xform.transform(lons, lats, alts))
 
     # Next, convert the center:
     if center is None:
         center = (np.mean(lats), np.mean(lons), np.mean(alts))
 
-    centerEcef = np.array(pyproj.transform(llaProj, ecefProj, center[1], center[0], center[2]))
+    centerEcef = np.array(lla2ecef_xform.transform(center[1], center[0], center[2]))
 
     # Now, we convert ECEF to ENU...
 
@@ -129,11 +132,14 @@ def enu2lla(x, y, z, center):
     """
 
     # Start by defining the projections for the conversion:
-    ecefProj = pyproj.Proj(proj='geocent',  ellps='WGS84', datum='WGS84')
+    ecefProj = pyproj.Proj(proj='geocent', ellps='WGS84', datum='WGS84')
     llaProj = pyproj.Proj(proj='latlong', ellps='WGS84', datum='WGS84')
 
+    # Define the transform:
+    lla2ecef_xform = pyproj.Transformer.from_proj(llaProj, ecefProj)
+
     # Take the center point and convert to ECEF (in km, please)
-    centerEcef = np.array(pyproj.transform(llaProj, ecefProj, center[1], center[0], center[2]))
+    centerEcef = lla2ecef_xform.transform(center[1], center[0], center[2])
 
     # Now, convert the ENU coordinates to a "delta" ECEF. This is the offset
     # (in ECEF coordinates) of the points from the center. To do so, get the
