@@ -1,3 +1,4 @@
 *.pyc
 pyltg.egg-info
 docs
+pyltg/examples/.ipynb_checkpoints
