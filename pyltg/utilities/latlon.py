@@ -89,7 +89,7 @@ def lla2enu(lats, lons, alts, center=None):
 
     # Now, we convert ECEF to ENU...
 
-    # Start by finding the vector pointing from the origin to the point(s of interest)
+    # Start by finding the vector pointing from the origin to the point(s) of interest
     vec = (ecef.transpose() - centerEcef).transpose()
 
     # Now, we construct the rotation matrix at the origin:
@@ -122,7 +122,7 @@ def enu2lla(x, y, z, center):
         The up-down (z) coordinates of the data in kilometers.
     center : three element array-like
         The lat/lon/alt of the center of the ENU coordinate system.
-        Altitude is in kilometers.
+        Altitude is in kilometers; lat/lon in degrees.
 
     Returns
     -------
