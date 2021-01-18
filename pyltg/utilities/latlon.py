@@ -153,7 +153,10 @@ def enu2lla(x, y, z, center):
     ecefVec = (ecefDelta.transpose() + centerEcef).transpose()
 
     # Convert these to LLA:
-    lla = np.array(pyproj.transform(ecefProj, llaProj, ecefVec[0, :], ecefVec[1, :], ecefVec[2, :]))
+    lla = np.array(lla2ecef_xform.transform(ecefVec[0, :],
+                                            ecefVec[1, :],
+                                            ecefVec[2, :],
+                                            direction='INVERSE'))
 
     # Now, we want to return this as a record array:
     dtype = [('lon', np.float), ('lat', np.float), ('alt', np.float)]
