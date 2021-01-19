@@ -79,13 +79,13 @@ def lla2enu(lats, lons, alts, center=None):
     lla2ecef_xform = pyproj.Transformer.from_proj(llaProj, ecefProj)
 
     # First, convert to ECEF
-    ecef = np.array(lla2ecef_xform.transform(lons, lats, alts))
+    ecef = np.array(lla2ecef_xform.transform(lons, lats, np.array(alts)*1e3))
 
     # Next, convert the center:
     if center is None:
-        center = (np.mean(lats), np.mean(lons), np.mean(alts))
+        center = (np.mean(lats), np.mean(lons), np.mean(alts)*1e3)
 
-    centerEcef = np.array(lla2ecef_xform.transform(center[1], center[0], center[2]))
+    centerEcef = np.array(lla2ecef_xform.transform(center[1], center[0], center[2]*1e3))
 
     # Now, we convert ECEF to ENU...
 
@@ -139,7 +139,7 @@ def enu2lla(x, y, z, center):
     lla2ecef_xform = pyproj.Transformer.from_proj(llaProj, ecefProj)
 
     # Take the center point and convert to ECEF (in km, please)
-    centerEcef = lla2ecef_xform.transform(center[1], center[0], center[2])
+    centerEcef = lla2ecef_xform.transform(center[1], center[0], center[2]*1e3)
 
     # Now, convert the ENU coordinates to a "delta" ECEF. This is the offset
     # (in ECEF coordinates) of the points from the center. To do so, get the
@@ -160,7 +160,7 @@ def enu2lla(x, y, z, center):
 
     # Now, we want to return this as a record array:
     dtype = [('lon', np.float), ('lat', np.float), ('alt', np.float)]
-    lla = np.core.records.fromarrays([lla[0], lla[1], lla[2]],
+    lla = np.core.records.fromarrays([lla[0], lla[1], lla[2]/1e3],
                                      dtype=dtype)
 
     return lla
