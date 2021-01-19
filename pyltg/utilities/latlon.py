@@ -138,7 +138,7 @@ def enu2lla(x, y, z, center):
     # Define the transform:
     lla2ecef_xform = pyproj.Transformer.from_proj(llaProj, ecefProj)
 
-    # Take the center point and convert to ECEF (in km, please)
+    # Take the center point and convert to ECEF, but convert km to m
     centerEcef = lla2ecef_xform.transform(center[1], center[0], center[2]*1e3)
 
     # Now, convert the ENU coordinates to a "delta" ECEF. This is the offset
@@ -147,7 +147,7 @@ def enu2lla(x, y, z, center):
     # (since it's a rotation matrix, the inverse is the transpose).
 
     rotMatrix = rot_matrix_ecef2enu(np.radians(center[1]), np.radians(center[0])).T
-    ecefDelta = rotMatrix.dot([x, y, z])*1e3
+    ecefDelta = rotMatrix.dot([x, y, z])*1e3  # again, convert to m
 
     # Now, translate the vector of points to the ECEF of the center:
     ecefVec = (ecefDelta.transpose() + centerEcef).transpose()
@@ -158,7 +158,7 @@ def enu2lla(x, y, z, center):
                                             ecefVec[2, :],
                                             direction='INVERSE'))
 
-    # Now, we want to return this as a record array:
+    # Now, we want to return this as a record array, but convert the alt to km:
     dtype = [('lon', np.float), ('lat', np.float), ('alt', np.float)]
     lla = np.core.records.fromarrays([lla[0], lla[1], lla[2]/1e3],
                                      dtype=dtype)
