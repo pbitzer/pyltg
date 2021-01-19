@@ -69,6 +69,23 @@ def lla2enu(lats, lons, alts, center=None):
     numpy record array
         An `n` element numpy record array, where `n` is the number of elements
         in lats/lons/alts. The record arrays has the fields `x`, `y`, and `z`.
+
+    Examples
+    --------
+
+    Find the Cartesian location of a point located at a lat, lon of
+    (34.681, -86.530) and a altitude of 1.1 km in a coordinate system
+    centered at lat, lon = (34.726, -86.639) and 100 meters above the surface.
+    But, remember, heights should be in kilometers and arguments are array-like
+    (i.e., no scalars)::
+
+        center_coord = (34.726, -86.639, 0.1)
+        xyz = lla2enu([34.681], [-86.530], [1.1], center=center_coord)
+
+    For a sanity check, convert back to x,y,z using the sister function
+    func:`enu2lla`::
+        lla = enu2lla(xyz.x, xyz.y, xyz.z, center=center_coord)
+
     """
 
     # Start by defining the projections for the conversion:
@@ -129,6 +146,24 @@ def enu2lla(x, y, z, center):
     numpy record array
         An `n` element numpy record array, where `n` is the number of elements
         in x/y/z. The record arrays has the fields `lat`, `lon`, and `alt`.
+        All values are in kilometers.
+
+    Examples
+    --------
+
+    Find the lat/lon/altitude of a point that is 10 km east, 5 km south, and
+    1 km above the Cartesian coordinate system centered at
+    lat, lon = (34.726, -86.639) and 100 meters above the surface. But,
+    remember, heights should be in kilometers and arguments are array-like
+    (i.e., no scalars)::
+
+        center_coord = (34.726, -86.639, 0.1)
+        lla = enu2lla([10], [-5], [1], center=center_coord)
+
+    For a sanity check, convert back to x,y,z using the sister function
+    func:`lla2enu`::
+        xyz = lla2enu(lla.lat, lla.lon, lla.alt, center=center_coord)
+
     """
 
     # Start by defining the projections for the conversion:
