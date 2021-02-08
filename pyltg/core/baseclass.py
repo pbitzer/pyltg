@@ -20,7 +20,7 @@ class Ltg(object):
         # Check to see if 'alt' is included. If not, add it:
         # todo: check for other columns
         if len(self._data) != 0:
-            self.verifyColumns()
+            self._verify_columns()
 
 
     def __len__(self):
@@ -64,7 +64,7 @@ class Ltg(object):
     def __iadd__(self, other):
         print('overload +=')  # todo: overload +=
 
-    def verifyColumns(self):
+    def _verify_columns(self):
         """
         Look at the columns in the underlying data, and ensure that
         `time`, `lat`, `lon`, `alt` are included. If they are not, add a
@@ -120,7 +120,7 @@ class Ltg(object):
         # If there's no record, we need to "initialize" the property a little differently...
         if nRec == 0:
             self._data = self.data.append(data, ignore_index=True, sort=False)
-            self.verifyColumns()
+            self._verify_columns()
         else:
             # TODO: make sure the record columns match the existing ones
             self._data.loc[nRec] = data
