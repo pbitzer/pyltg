@@ -77,7 +77,7 @@ class Ltg(object):
             if att not in self._data.columns:
                 self._data[att] = 0.0
 
-    def addField(self, field_name, data):
+    def _add_field(self, field_name, data):
         """
         Add a field (i.e., column) to the underlying Dataframe
 
@@ -95,7 +95,7 @@ class Ltg(object):
         # TODO: make sure the number of data matches existing element
         self._data[field_name] = data
 
-    def addRecord(self, data):
+    def _add_record(self, data):
         """
         Add a record (i.e., row) to the Dataframe.
 
@@ -115,15 +115,15 @@ class Ltg(object):
 
         """
 
-        nRec = len(self._data)
+        num_rec = len(self._data)
 
         # If there's no record, we need to "initialize" the property a little differently...
-        if nRec == 0:
+        if num_rec == 0:
             self._data = self.data.append(data, ignore_index=True, sort=False)
             self._verify_columns()
         else:
             # TODO: make sure the record columns match the existing ones
-            self._data.loc[nRec] = data
+            self._data.loc[num_rec] = data
 
     def limit(self, **kwargs):
         """
