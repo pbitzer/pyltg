@@ -37,6 +37,8 @@ class Ltg(object):
         elif name in self._data.columns:
             return self._data[name].values
             # todo: try/except?
+        elif name == 'count':
+            return self.__len__()
         else:
             raise AttributeError('Unknown column name: ' + name + '. Valid ones: ' + ', '.join(self._data.columns))
 
