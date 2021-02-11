@@ -60,9 +60,10 @@ class Ltg(object):
 
         """
 
-        # todo: check for bad key (TypeError)
-        # todo: check for bad indices (IndexError)
-        return self._data.iloc[key]
+        # TODO: check for bad indices (IndexError)
+
+        # Only look at active rows
+        return self._data[self._data.active].iloc[key]
 
     def __iadd__(self, other):
         print('overload +=')  # todo: overload +=
