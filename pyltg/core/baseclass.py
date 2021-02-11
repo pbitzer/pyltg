@@ -21,9 +21,10 @@ class Ltg(object):
         if len(self._data) != 0:
             self._verify_columns()
 
-
     def __len__(self):
-        return self._data.shape[0]
+        # Only count active
+
+        return self._data[self._data.active].shape[0]
 
     def __getattr__(self, name):
         # Override the get attribute to get the column name
