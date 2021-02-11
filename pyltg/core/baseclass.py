@@ -48,6 +48,8 @@ class Ltg(object):
         """
         Overload the indexing operator to get specified rows of the underlying data.
 
+        Note that this is an index locator and is relative to active data.
+
         Parameters
         ----------
         key : slice, scalar
@@ -134,7 +136,8 @@ class Ltg(object):
             self._verify_columns()
         else:
             # TODO: make sure the record columns match the existing ones
-            self._data.loc[num_rec] = data
+            self._data.loc[num_rec] = data  # TODO: should this be iloc?
+
     def reset_active(self):
         """
         Set all data to be active.
@@ -191,25 +194,40 @@ class Ltg(object):
 
             Ltg.limit(lat = [30, 40])
 
+        Ny default, limits are only applied to active data.
+
         Parameters
         ----------
+        reset : bool
+            If `True`, reset the active state (to all active) before
+            limiting. Default is `False`
+
+        active : array-like
+            The indices of the data you wish to keep active. Alternatively,
+            an array of booleans the same length as the active data. In this
+            case, elements that are `True` will correspond to data that
+            is kept active. Use this keyword in a "which data to keep"
+            manner.
+
+            In general, you wouldn't try to limit other keys when using
+            `active`. If you do, crazy thigs might happen!
+
         kwargs : varies
-            This should be provided in key-range pairs. The given key will be
-            limited according to the provided range.
+            This should be provided in key-range pairs. The keys correspond
+            to the columns in the underlying data.
+            The key(s) will be limited according to the
+            provided range (inclusive).
+
+            If you're passing in time, it needs to be int64 or datetime64[ns]
+            (The nanosecond measurement is important!)
 
         Returns
         -------
-        Tuple
-            The returned tuple contains the indices (rows) and the count of the
-            limited values.
+        int
+            The count of the values within the provided limits.
 
         """
-        # Pass in the data attributes of the data to be limited and their range,
-        # e.g.,
-        # Ltg.limit(lat = [30, 40])
-        # will return the indices of the data with lats between 30,40
-        # Any attribute in the data will work.
-        # If times, either pass in int64 or datetime64[ns]
+
         import numpy as np
 
         if reset:
@@ -252,6 +270,8 @@ class Ltg(object):
 
                 if type(val[0]) != 'int64':
                     val = np.array(val).astype('int64')
+
+            # Each iteration of the loop, update if it's in range or not.
             boolVal = boolVal & (thisData >= val[0]) & (thisData <= val[1])
 
         self._data.loc[is_active, 'active'] = boolVal
