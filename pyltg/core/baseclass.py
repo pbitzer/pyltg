@@ -17,8 +17,7 @@ class Ltg(object):
     def __init__(self, *args, **kwargs):
         self._data = pd.DataFrame(*args, **kwargs)  # initialize to an empty DataFrame
 
-        # Check to see if 'alt' is included. If not, add it:
-        # todo: check for other columns
+        # Check to see if the standard columns are included:
         if len(self._data) != 0:
             self._verify_columns()
 
@@ -43,13 +42,13 @@ class Ltg(object):
 
     def __getitem__(self, key):
         """
-        Overload the indexing operator to get the specified columns of the underlying data
+        Overload the indexing operator to get specified rows of the underlying data.
 
         Parameters
         ----------
-        key : str
-            The name of the data attribute you want to get. This varies from data
-            set to data set, but 'time', 'lat', 'lon' should always be there.
+        key : slice, scalar
+            The index location(s) you want. Will be passed to iloc of the
+            underlying Dataframe.
 
         Returns
         -------
@@ -82,7 +81,7 @@ class Ltg(object):
         Add a field (i.e., column) to the underlying Dataframe
 
         .. note::
-            This isn't typically used outside of core developers.
+            This shouldn't be used outside of core developers.
 
         Parameters
         ----------
@@ -103,6 +102,9 @@ class Ltg(object):
 
         .. warning::
             Very little error catching is implemented.
+
+        .. note::
+            This shouldn't be used outside of core developers.
 
         Parameters
         ----------
@@ -170,6 +172,7 @@ class Ltg(object):
             # For the time field, be careful with type. Sometimes, a datetime64
             # might be passed in as a keyword, others an int64
             if arg is 'time':
+                # Cast the data in the object as int64
                 thisData = thisData.astype('int64')
 
                 if type(val[0]) is not 'int64':
