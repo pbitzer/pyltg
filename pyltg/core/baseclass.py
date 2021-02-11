@@ -161,7 +161,6 @@ class Ltg(object):
         return self._data[self._data.active].copy()
 
 
-    def limit(self, **kwargs):
     def head(self, n=5):
         """
         Return the first `n` rows of the active data.
@@ -182,6 +181,8 @@ class Ltg(object):
         """
 
         return self._data[self._data.active].head(n)
+
+    def limit(self, reset=False, active=None, **kwargs):
         """
         Limit the underlying data based on the inputs.
 
@@ -211,14 +212,34 @@ class Ltg(object):
         # If times, either pass in int64 or datetime64[ns]
         import numpy as np
 
-        boolVal = np.full(len(self._data), True)  # an array of all true
+        if reset:
+            self.reset_active()
+
+        is_active = self._data.active
+
+        boolVal = self.active  # This is an array of True
+
+        # First, check to see if active was passed in. If so, this is not
+        # a range, but an array-like sequence, so we handle it differently.
+        if active is not None:
+
+            # We don't need the values moving forward, so pop it:
+            active_idx = np.atleast_1d(active)
+
+            # Since we're provided the indicies of what we want to keep,
+            # flip all the values to False. This is easier than figuring
+            # out which indices were not passed.
+            boolVal = ~boolVal
+
+            # Since it's the first keyword we're finding, we can just update the array
+            boolVal[active_idx] = True
 
         for arg, val in kwargs.items():
             # If any keywords are passed as None, skip them
             if val is None:
                 continue
             try:
-                thisData = self._data[arg].values
+                thisData = self.__getattr__(arg)
             except KeyError:
                 print(arg + ' is an invalid data attribute name. Skipping...')
                 continue
@@ -233,7 +254,8 @@ class Ltg(object):
                     val = np.array(val).astype('int64')
             boolVal = boolVal & (thisData >= val[0]) & (thisData <= val[1])
 
-        idx = np.where(boolVal)
+        self._data.loc[is_active, 'active'] = boolVal
+
         count = np.count_nonzero(boolVal)
 
-        return idx, count
+        return count
