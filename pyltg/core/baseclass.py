@@ -246,11 +246,11 @@ class Ltg(object):
 
             # For the time field, be careful with type. Sometimes, a datetime64
             # might be passed in as a keyword, others an int64
-            if arg is 'time':
+            if arg == 'time':
                 # Cast the data in the object as int64
                 thisData = thisData.astype('int64')
 
-                if type(val[0]) is not 'int64':
+                if type(val[0]) != 'int64':
                     val = np.array(val).astype('int64')
             boolVal = boolVal & (thisData >= val[0]) & (thisData <= val[1])
 
