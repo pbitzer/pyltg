@@ -69,7 +69,8 @@ class Ltg(object):
         """
         Look at the columns in the underlying data, and ensure that
         `time`, `lat`, `lon`, `alt` are included. If they are not, add a
-        column of zeros.
+        column of zeros. Also, check for an `active` column and if not present,
+        add boolean True values.
         """
 
         atts = ['time', 'lat', 'lon', 'alt']
@@ -77,6 +78,9 @@ class Ltg(object):
         for att in atts:
             if att not in self._data.columns:
                 self._data[att] = 0.0
+
+        if 'active' not in self._data.columns:
+            self._data['active'] = True
 
     def _add_field(self, field_name, data):
         """
