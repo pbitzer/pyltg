@@ -162,6 +162,26 @@ class Ltg(object):
 
 
     def limit(self, **kwargs):
+    def head(self, n=5):
+        """
+        Return the first `n` rows of the active data.
+
+        The active data is the data in which the active attribute is True.
+        Mimics Pandas `head`.
+
+        Parameters
+        ----------
+        n : int, optional
+            The number of rows to return. The default is 5.
+
+        Returns
+        -------
+        Pandas Dataframe
+            The first `n` rows of the active data.
+
+        """
+
+        return self._data[self._data.active].head(n)
         """
         Limit the underlying data based on the inputs.
 
