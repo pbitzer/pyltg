@@ -132,6 +132,31 @@ class Ltg(object):
         else:
             # TODO: make sure the record columns match the existing ones
             self._data.loc[num_rec] = data
+    def reset_active(self):
+        """
+        Set all data to be active.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        self._data.active = True
+
+    def get_active(self):
+        """
+        Get a copy of the "active" data from the class.
+
+        Returns
+        -------
+        Pandas Dataframe
+            A copy of the active data.
+
+        """
+
+        return self._data[self._data.active].copy()
+
 
     def limit(self, **kwargs):
         """
