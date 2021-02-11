@@ -36,8 +36,9 @@ class Ltg(object):
         if name == 'data' or name == '_data':
             return object.__getattribute__(self, '_data')
         elif name in self._data.columns:
-            return self._data[name].values
-            # todo: try/except?
+            # If we're getting something from the Dataframe, then
+            # we only want the active rows:
+            return self._data[self._data.active][name].values
         elif name == 'count':
             return self.__len__()
         else:
