@@ -860,7 +860,7 @@ class GLM():
         element is a `dict`. Depending on the arguments, you could have these:
 
             :groups: MPL Line2D
-            :events_poly: MPL PolyCollection of event polygons
+            :events_poly: List of MPL PolyCollection of event polygons (one element for each group)
             :events_pt: MPL Line 2D of event centroids
             :gridlines: Cartopy Gridliner
 
