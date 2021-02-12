@@ -803,7 +803,7 @@ class GLM():
                     gridlines=True,
                     marker_group='.',
                     colors_events='yellow', fill_events=True,
-                    event_centers=True):
+                    event_centers=False):
         """
         Make a spatial plot of groups.
 
