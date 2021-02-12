@@ -799,11 +799,11 @@ class GLM():
         else:
             return grps
 
-    def plot_groups(self, groups, do_events=False, ax=None, latlon=True,
+    def plot_groups(self, groups=None, do_events=False, ax=None, latlon=True,
                     gridlines=True,
-                    marker_group='.',
-                    colors_events='yellow', fill_events=True,
-                    event_centers=True):
+                    group_marker='.', group_color='black',
+                    event_color='yellow', fill_events=True,
+                    event_centers=False):
         """
         Make a spatial plot of groups.
 
@@ -837,26 +837,30 @@ class GLM():
         gridlines: bool
             If True, then gridlines will be added to the plot. Only valid
             if `latlon` is also True.
-        marker_group: str
+        group_marker: str
             The MPL marker used when plotting only groups
             i.e, when `do_events=False`.
-        colors_events: str
+        group_color: str
+            The MPL color used when plotting only groups
+            i.e, when `do_events=False`.
+        event_color: str
             The color scheme used to scale the event colors by the energy.
             Hard coded for now to be the yellow scheme!
         fill_events: bool
-            If True, fill the events with a color related to `colors_events`.
+            If True, fill the events with a color related to `event_color`.
             If False, just draw an empty polygon.
         event_centers: bool
             If True, plot a marker at the center of each event.
 
         Returns
         -------
-        dict
-            A dictionary of the individual MPL plot artists. Depending on the
-            arguments, you could have these:
+        tuple
+
+        Two element tuple. The first element is the Axes, and the second
+        element is a `dict`. Depending on the arguments, you could have these:
 
             :groups: MPL Line2D
-            :events_poly: MPL PolyCollection of event polygons
+            :events_poly: List of MPL PolyCollection of event polygons (one element for each group)
             :events_pt: MPL Line 2D of event centroids
             :gridlines: Cartopy Gridliner
 
@@ -885,12 +889,12 @@ class GLM():
         if not do_events:
             # just make a scatter plot
             grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None',
-                              marker=marker_group, **trans_kw)
+                              marker=group_marker, color=group_color, **trans_kw)
             retVal['groups'] = grp_plt[0]
         else:
             events = self.get_events(groups.id, combine=True)
 
-            poly = event_poly(events, colors=colors_events, latlon=latlon, fill=True)
+            poly = event_poly(events, colors=event_color, latlon=latlon, fill=True)
             _ = ax.add_collection(poly)
 
             # If nothing else is plotted, then the x/y limits be MPL's default.
@@ -910,4 +914,4 @@ class GLM():
             gl = ax.gridlines(draw_labels=True, linestyle=':')
             retVal['gridlines'] = gl
 
-        return retVal
+        return ax, retVal
