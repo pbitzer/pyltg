@@ -12,29 +12,7 @@ Basic use is to just initialize the class with a LMA source file::
     f = 'nalma_lylout_20170427_07_3600.dat.gz'
     lma = LMA(f)
 
-Print the time of all the sources::
-
-    lma.time
-
-Just get indices of the sources in a 10 minute period::
-
-    t0 = np.datetime64('2017-04-27T07:00:00', 'ns')  # times must be datetime64[ns]
-    t1 = np.datetime64('2017-04-27T07:10:00', 'ns')
-    ind, cnt = lma.limit(time=[t0, t1])
-
-The LMA data for these times::
-
-    lma_subset = lma[ind[0]]
-
-Note this is returned (for now) as a Pandas Dataframe, not a new LMA object.
-
-.. warning::
-
-    This is likely to be changed in the future!
-
-To restrict in time and space::
-
-    ind, cnt = lma.limit(time=[t0, t1], lat=[33, 35], lon=[-87, -85])
+For an example of how to use it, see the notebook in examples/overview.ipynb
 
 """
 
@@ -46,7 +24,6 @@ import pandas as pd
 import tables
 
 from pyltg.core.baseclass import Ltg
-
 
 
 def get_flashes(lma_data, min_sources=None):
