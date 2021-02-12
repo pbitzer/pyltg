@@ -8,7 +8,7 @@ Examples
 Basic use is to just initialize the class with a ENTLN pulse file::
 
     f = 'LtgFlashPortions20180403.csv.gz'
-    eni = ENLTN(f)
+    eni = ENTLN(f)
 
 """
 
