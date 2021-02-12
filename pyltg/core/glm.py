@@ -799,7 +799,7 @@ class GLM():
         else:
             return grps
 
-    def plot_groups(self, groups, do_events=False, ax=None, latlon=True,
+    def plot_groups(self, groups=None, do_events=False, ax=None, latlon=True,
                     gridlines=True,
                     group_marker='.', group_color='black',
                     event_color='yellow', fill_events=True,
