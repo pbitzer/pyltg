@@ -819,8 +819,9 @@ class GLM():
 
         Parameters
         ----------
-        groups : array-like
-            The groups to be plotted.
+        groups : `Ltg` class or Pandas Dataframe
+            The groups to be plotted. If `None`, plot the active
+            groups. Default is None.
         do_events : bool
             If True, then plot the individual child events too. Right now,
             this is done in an approximate manner. The event footprint is
@@ -861,6 +862,9 @@ class GLM():
 
         """
         import cartopy.crs as ccrs
+
+        if groups is None:
+            groups = self.groups[self.groups.active]
 
         if ax is None:
             if latlon:
