@@ -851,9 +851,10 @@ class GLM():
 
         Returns
         -------
-        dict
-            A dictionary of the individual MPL plot artists. Depending on the
-            arguments, you could have these:
+        tuple
+
+        Two element tuple. The first element is the Axes, and the second
+        element is a `dict`. Depending on the arguments, you could have these:
 
             :groups: MPL Line2D
             :events_poly: MPL PolyCollection of event polygons
@@ -910,4 +911,4 @@ class GLM():
             gl = ax.gridlines(draw_labels=True, linestyle=':')
             retVal['gridlines'] = gl
 
-        return retVal
+        return ax, retVal
