@@ -52,30 +52,33 @@ Just get indices of the sources in a a certain period::
 
     t0 = np.datetime64('2018-11-03T00:28:31.0', 'ns')  # times must be datetime64[ns]
     t1 = np.datetime64('2018-11-03T00:28:31.6', 'ns')
-    ind, cnt = h_src.limit(time=[t0, t1])  # cnt should be 519
+    cnt = h_src.limit(time=[t0, t1])  # cnt should be 519
 
 The HAMMA data for these times::
 
-    hamma_subset = h_src[ind]
+    hamma_subset = h_src.get_active()
+    hamma_subset.time
 
-Note this is returned (for now) as a Pandas Dataframe, not a new HAMMA object.
+Of course, you don't need to extract the active data::
+
+    h_src.time
+
+Note this is returned as a Pandas Dataframe, not a new HAMMA object.
 
 To restrict in time and space::
 
-    ind, cnt = h_src.limit(time=[t0, t1], lat=[-31.66, -31.6], lon=[-63.85, -63.8])
+    cnt = h_src.limit(time=[t0, t1], lat=[-31.66, -31.6], lon=[-63.85, -63.8])
 
 Plot all the data::
 
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots()
+    ax.scatter(h_src.data.lon, h_src.data.lat)
+
+Now, overplot the "active" data, i.e., the data that falls within the limits provided::
+
     ax.scatter(h_src.lon, h_src.lat)
-
-Overplot the subset::
-
-    ax.scatter(h_src[ind].lon, h_src[ind].lat)
-
-
 
 """
 
@@ -238,7 +241,7 @@ class HAMMA(Ltg):
 
             sources.append(this_src)
         try:
-            self._data = pd.concat(sources, ignore_index=True)
+            self._add_record(pd.concat(sources, ignore_index=True))
         except ValueError:
             # This can happen when we nothing to concat (all files empty)
             print('No data in these files')
@@ -246,9 +249,9 @@ class HAMMA(Ltg):
         # Now, convert x,y,z to lla:
         lla = enu2lla(self._data.x.values, self._data.y.values, self._data.z.values, center=CENTER)
 
-        self._data['lat'] = lla.lat
-        self._data['lon'] = lla.lon
-        self._data['alt'] = lla.alt
+        self._add_field('lat', lla.lat)
+        self._add_field('lon', lla.lon)
+        self._add_field('alt', lla.alt)
 
         # todo: drop x,y,z
 

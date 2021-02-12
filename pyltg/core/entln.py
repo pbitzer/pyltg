@@ -8,7 +8,7 @@ Examples
 Basic use is to just initialize the class with a ENTLN pulse file::
 
     f = 'LtgFlashPortions20180403.csv.gz'
-    eni = ENLTN(f)
+    eni = ENTLN(f)
 
 """
 
@@ -146,7 +146,7 @@ class ENTLN(Ltg):
         rawData.alt /= 1e3  # km, please
         rawData.amp /= 1e3  # kA, please
 
-        self._data = rawData
+        self._add_record(rawData)
 
 
 def split_file(file):
