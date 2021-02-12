@@ -149,5 +149,5 @@ class NLDN(Ltg):
         ymd = year + '-' + month + '-' + day + 'T'
 
         rawData.time = np.array(ymd + rawData.time.values, dtype='datetime64')
-        
-        self._data = rawData
+
+        self._add_record(rawData)

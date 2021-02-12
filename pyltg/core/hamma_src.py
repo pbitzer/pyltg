@@ -241,7 +241,7 @@ class HAMMA(Ltg):
 
             sources.append(this_src)
         try:
-            self._data = pd.concat(sources, ignore_index=True)
+            self._add_record(pd.concat(sources, ignore_index=True))
         except ValueError:
             # This can happen when we nothing to concat (all files empty)
             print('No data in these files')
@@ -249,9 +249,9 @@ class HAMMA(Ltg):
         # Now, convert x,y,z to lla:
         lla = enu2lla(self._data.x.values, self._data.y.values, self._data.z.values, center=CENTER)
 
-        self._data['lat'] = lla.lat
-        self._data['lon'] = lla.lon
-        self._data['alt'] = lla.alt
+        self._add_field('lat', lla.lat)
+        self._add_field('lon', lla.lon)
+        self._add_field('alt', lla.alt)
 
         # todo: drop x,y,z
 
