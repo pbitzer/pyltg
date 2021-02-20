@@ -84,6 +84,7 @@ def lla2enu(lats, lons, alts, center=None):
 
     For a sanity check, convert back to x,y,z using the sister function
     func:`enu2lla`::
+
         lla = enu2lla(xyz.x, xyz.y, xyz.z, center=center_coord)
 
     """
@@ -162,6 +163,7 @@ def enu2lla(x, y, z, center):
 
     For a sanity check, convert back to x,y,z using the sister function
     func:`lla2enu`::
+
         xyz = lla2enu(lla.lat, lla.lon, lla.alt, center=center_coord)
 
     """

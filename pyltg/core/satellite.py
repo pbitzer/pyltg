@@ -15,10 +15,7 @@ def energy_colors(energies, min_val=None, max_val=None, satellite=None):
     provide by satellite lightning detectors. For GLM, an estimate of the energy
     is provided directly in the data, but for LIS you'll usually have the
     radiance (which is really the spectral energy density, but I digress).
-    The radiance can be directly passed into the function; in fact, we assume
-    it is the radiance if you use `satellite='LIS'
-
-
+    Either way, this is what should be passed in.
 
     Parameters
     ----------
@@ -42,7 +39,6 @@ def energy_colors(energies, min_val=None, max_val=None, satellite=None):
     colors : NumPy array
         nx3 array of bytes. The last dimension corresponds to RGB
         values.
-
 
     .. note::
         Right now, the only color scale available to use a yellow->red. Others

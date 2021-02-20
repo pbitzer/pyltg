@@ -12,7 +12,7 @@ Basic use is to just initialize the class with a LMA source file::
     f = 'nalma_lylout_20170427_07_3600.dat.gz'
     lma = LMA(f)
 
-For an example of how to use it, see the notebook in examples/overview.ipynb
+For an example of how to use it, see the relevant `example <../overview.html>`_.
 
 """
 
