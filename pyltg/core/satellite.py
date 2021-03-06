@@ -2,6 +2,8 @@
 """
 Module with common functions for lightning satellite data (e.g., GLM, LIS).
 
+Most users won't need to call these functions directly.
+
 """
 
 import numpy as np
@@ -39,6 +41,7 @@ def energy_colors(energies, min_val=None, max_val=None, satellite=None):
     colors : NumPy array
         nx3 array of bytes. The last dimension corresponds to RGB
         values.
+
 
     .. note::
         Right now, the only color scale available to use a yellow->red. Others
