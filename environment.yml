@@ -1,0 +1,19 @@
+name: ltg
+channels:
+- conda-forge
+- defaults
+dependencies:
+- numpy
+- netcdf4
+- numpy
+- pandas
+- pip
+- matplotlib
+- python=3.6
+- scipy
+- pyproj
+- conda-forge::cartopy
+- pytables
+
+
+

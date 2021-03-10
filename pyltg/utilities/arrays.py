@@ -6,6 +6,133 @@ Functions for various operations on numpy arrays
 import numpy as np
 
 
+def rotation_z_matrix(angle):
+    """
+    Define a rotation matrix about the z axis (aka yaw matrix).
+
+    Parameters
+    ----------
+    angle : numeric
+        The angle about which to rotate (in radians).
+
+    Returns
+    -------
+    rot_z : NumPy Array
+        The rotation matrix
+
+    """
+
+    #aka yaw matrix
+    cos = np.cos(angle)
+    sin = np.sin(angle)
+
+    rot_z = np.array([
+        [cos, -sin, 0],
+        [sin, cos, 0]
+        [0, 0, 1]
+        ])
+
+    return rot_z
+
+def rotation_y_matrix(angle):
+    """
+    Define a rotation matrix about the y axis (aka pitch matrix).
+
+    Parameters
+    ----------
+    angle : numeric
+        The angle about which to rotate (in radians).
+
+    Returns
+    -------
+    rot_y : NumPy Array
+        The rotation matrix
+
+    """
+
+    cos = np.cos(angle)
+    sin = np.sin(angle)
+
+    rot_y = np.array([
+        [cos, 0, sin],
+        [0, 1, 0],
+        [-sin, 0, cos]
+        ])
+
+    return rot_y
+
+def rotation_x_matrix(angle):
+    """
+    Define a rotation matrix about the x axis (aka roll matrix).
+
+    Parameters
+    ----------
+    angle : numeric
+        The angle about which to rotate (in radians).
+
+    Returns
+    -------
+    rot_x : NumPy Array
+        The rotation matrix
+    """
+
+    cos = np.cos(angle)
+    sin = np.sin(angle)
+
+    rot_x = np.array([
+        [1, 0, 0],
+        [0, cos, -sin],
+        [0, sin, cos]
+        ])
+
+    return rot_x
+
+def rotation_matrix(yaw, pitch, roll):
+    """
+    Define a 3 dimension rotation matrix.
+
+    This provides a quick way to get a rotation matrix. It is equivelant
+    to
+
+    .. math::
+        R_z \cdot R_y \cdot R_x
+
+    where :math:`R_x` is the rotation matrix about the x axis (and similar
+    :math:`R_y` is the rotation matrix about the y axis, and
+    :math:`R_z` is the rotation matrix about the z axis. This function is
+    a bit faster than finding the three matrices individually and then (matrix)
+    multiplying.
+
+    Parameters
+    ----------
+    yaw : numeric
+        The rotation angle about the x axis.
+    pitch : numeric
+        The rotation angle about the y axis.
+    roll : numeric
+        The rotation angle about the z axis.
+
+    Returns
+    -------
+    rot_matrix : 3x3 NumPy array
+        The matrix defining the rotation.
+
+    """
+
+    # Get the sines/cosines for the angles.
+    cy = np.cos(yaw); sy = np.sin(yaw)
+    cp = np.cos(pitch); sp = np.sin(pitch)
+    cr = np.cos(roll); sr = np.sin(roll)
+
+    rot_matrix = np.array([
+        [cy*cp, cy*sp*sr-sy*cr, cy*sp*cr + sy*sr],
+        [sy*cp, sy*sp*sr+cy*cr, sy*sp*cr - cy*sr],
+        [-sp  , cp*sr,          cp*cr]
+        ])
+
+    return rot_matrix
+    # return np.dot( np.dot(m_yaw, m_pitch), m_roll)
+
 def perturb_points(x, y, delta=1, npts=16):
     """
     Draw a circle of points around a set of points.

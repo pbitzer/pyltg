@@ -67,7 +67,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 
-from pyltg.core.satellite import get_children
+from pyltg.core.satellite import get_children, energy_colors
 from pyltg.core.baseclass import Ltg
 
 try:
@@ -460,69 +460,13 @@ def event_poly(events, latlon=True,
 
     if fill:
         # todo: here, we would pick a different color scheme
-        colors = energy_colors(events.energy.values)/255
+        colors = energy_colors(events.energy.values, satellite='GLM')/255
     else:
         colors = 'none'
 
     poly = PolyCollection(verts, edgecolors='black', facecolors=colors, **trans_kw)
 
     return poly
-
-def energy_colors(energies):
-    """
-    Map the given GLM energies to a set of 256 colors.
-
-    Energies are scaled between 1 fJ and 50 fJ. #todo change this to keyword
-
-    .. note::
-        Right now, the only color scale available to use a yellow->red. Others
-        will be added later.
-
-    Parameters
-    ----------
-    energies n element array-like
-
-    Returns
-    -------
-    array :
-        nx3 NumPy array of bytes. The last dimension corresponds to RGB
-        values.
-
-    """
-    # get RGB values that correspond to the energies.
-    min_val = 1e-15
-    max_val = 5e-14
-
-    _min_val = np.log10(min_val)
-    _max_val = np.log10(max_val)
-    _values = np.log10(energies)
-
-    # linear scale
-    m = (255-0)/(_max_val-_min_val)
-    b = 255.-m * _max_val
-
-    scl_colors = m*_values+b
-
-    # First, clip to bounds:
-    scl_colors = np.clip(scl_colors, 0, 255)
-    # Make it a byte for indexing
-    scl_colors = np.uint8(scl_colors)
-
-    colors = np.zeros((len(_values), 3))
-
-    nsteps = 256
-    redV = np.repeat(np.uint8(255), nsteps)
-    blueV = np.repeat(np.uint8(0), nsteps)
-    scale = np.arange(nsteps)/(nsteps-1)
-    n0 = 255
-    n1 = 0
-    greenV = np.uint8(n0 + (n1-n0) * scale)
-
-    colors[:, 0] = redV[scl_colors]
-    colors[:, 1] = greenV[scl_colors]
-    colors[:, 2] = blueV[scl_colors]
-
-    return colors
 
 def filename2date(files):
     # Take a filename and get the start time
@@ -855,11 +799,11 @@ class GLM():
         else:
             return grps
 
-    def plot_groups(self, groups, do_events=False, ax=None, latlon=True,
+    def plot_groups(self, groups=None, do_events=False, ax=None, latlon=True,
                     gridlines=True,
-                    marker_group='.',
-                    colors_events='yellow', fill_events=True,
-                    event_centers=True):
+                    group_marker='.', group_color='black',
+                    event_color='yellow', fill_events=True,
+                    event_centers=False):
         """
         Make a spatial plot of groups.
 
@@ -875,8 +819,9 @@ class GLM():
 
         Parameters
         ----------
-        groups : array-like
-            The groups to be plotted.
+        groups : `Ltg` class or Pandas Dataframe
+            The groups to be plotted. If `None`, plot the active
+            groups. Default is None.
         do_events : bool
             If True, then plot the individual child events too. Right now,
             this is done in an approximate manner. The event footprint is
@@ -892,31 +837,38 @@ class GLM():
         gridlines: bool
             If True, then gridlines will be added to the plot. Only valid
             if `latlon` is also True.
-        marker_group: str
+        group_marker: str
             The MPL marker used when plotting only groups
             i.e, when `do_events=False`.
-        colors_events: str
+        group_color: str
+            The MPL color used when plotting only groups
+            i.e, when `do_events=False`.
+        event_color: str
             The color scheme used to scale the event colors by the energy.
             Hard coded for now to be the yellow scheme!
         fill_events: bool
-            If True, fill the events with a color related to `colors_events`.
+            If True, fill the events with a color related to `event_color`.
             If False, just draw an empty polygon.
         event_centers: bool
             If True, plot a marker at the center of each event.
 
         Returns
         -------
-        dict
-            A dictionary of the individual MPL plot artists. Depending on the
-            arguments, you could have these:
+        tuple
+
+        Two element tuple. The first element is the Axes, and the second
+        element is a `dict`. Depending on the arguments, you could have these:
 
             :groups: MPL Line2D
-            :events_poly: MPL PolyCollection of event polygons
+            :events_poly: List of MPL PolyCollection of event polygons (one element for each group)
             :events_pt: MPL Line 2D of event centroids
             :gridlines: Cartopy Gridliner
 
         """
         import cartopy.crs as ccrs
+
+        if groups is None:
+            groups = self.groups[self.groups.active]
 
         if ax is None:
             if latlon:
@@ -937,12 +889,12 @@ class GLM():
         if not do_events:
             # just make a scatter plot
             grp_plt = ax.plot(groups.lon, groups.lat, linestyle='None',
-                              marker=marker_group, **trans_kw)
+                              marker=group_marker, color=group_color, **trans_kw)
             retVal['groups'] = grp_plt[0]
         else:
             events = self.get_events(groups.id, combine=True)
 
-            poly = event_poly(events, colors=colors_events, latlon=latlon, fill=True)
+            poly = event_poly(events, colors=event_color, latlon=latlon, fill=True)
             _ = ax.add_collection(poly)
 
             # If nothing else is plotted, then the x/y limits be MPL's default.
@@ -962,4 +914,4 @@ class GLM():
             gl = ax.gridlines(draw_labels=True, linestyle=':')
             retVal['gridlines'] = gl
 
-        return retVal
+        return ax, retVal
