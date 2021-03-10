@@ -25,6 +25,87 @@ import tables
 
 from pyltg.core.baseclass import Ltg
 
+def flash_sort(files,
+               ctr_lat=None, ctr_lon=None,
+               logpath=None, savepath=None,
+               stations=(6, 21), chi2=(0, 2.0), alt=(0, 20000),
+               distance=3000.0,
+               thresh_duration=3.0, thresh_critical_time=0.15,
+               merge_critical_time=0.5, mask_length=8,
+               ascii_flashes_out='flashes_out.dat'):
+    """
+    Sort the given files into flashes.
+
+    This is essentially a wrapper for the flash sorting done by `lmatools`,
+    so it requires this package.
+
+    Most parameters are passed straight to the requisite function in
+    `lmatools` and are documented there. Selected ones are documented here.
+
+    Parameters
+    -----------
+    files: str or sequence of string
+        The files to read in. Should ASCII files with LMA sources.
+    logpath: str or pathlib.Path
+        Where the flash sorting logs are saved. Defaults to tmp/
+        relative to the path of the first `files`. If the path doesn't exist,
+        we'll make it.
+    savepath: str or pathlib.Path
+        Where the flash sorting files are saved. Defaults to flash_sort/
+        relative to the path of the first `files`. If the path doesn't exist,
+        we'll make it.
+    ctr_lat: float
+        The center latitude of the LMA for the files. If this _or_ `ctr_lon`
+        is not given, we'll peek in the first file to find the coordinate
+        center. This is then used for all the files.
+    ctr_lon: float
+        The center longitude of the LMA for the files. If this _or_ `ctr_lat`
+        is not given, we'll peek in the first file to find the coordinate
+        center. This is then used for all the files.
+
+    """
+
+    from pathlib import Path
+
+    from lmatools.flashsort.autosort.autorun import run_files_with_params, logger_setup
+    from lmatools.flashsort.autosort.autorun_sklearn import cluster
+
+    files = np.atleast_1d(files)
+
+    if logpath is None:
+        logpath = Path(files[0]).parent.joinpath('tmp/')
+    else:
+        logpath = Path(logpath)
+
+    logpath.mkdir(parents=True, exist_ok=True)
+
+    logger_setup(logpath)
+
+    if savepath is None:
+        savepath = Path(files[0]).parent.joinpath('flash_sort/')
+    else:
+        savepath = Path(savepath)
+        
+    savepath.mkdir(parents=True, exist_ok=True)
+
+    if (ctr_lat is None) or (ctr_lon is None):
+        ctr_lat, ctr_lon = _get_center_from_file(files[0])
+
+    # Make keyword
+    params = {'stations': stations,
+              'chi2': chi2,
+              'ascii_flashes_out': ascii_flashes_out,
+              'ctr_lat': ctr_lat, 'ctr_lon': ctr_lat,
+              'alt': alt,
+              'distance': distance,
+              'thresh_duration': thresh_duration, 
+              'thresh_critical_time': thresh_critical_time,
+              'merge_critical_time': merge_critical_time, 
+              'mask_length': mask_length
+              }
+
+    run_files_with_params(files, savepath, params, cluster, 
+                          retain_ascii_output=False, cleanup_tmp=True)
 
 def get_flashes(lma_data, min_sources=None):
     """
@@ -361,3 +442,11 @@ class LMA(Ltg):
         data.time = date + secs + secsFrac
 
         return data
+
+if __name__ == '__main__':
+    
+    f = '/Volumes/rstor/LMA/20170427/nalma_lylout_20170427_01_3600.dat.gz'
+    
+    flash_sort(f,savepath='/Users/bitzer')
+    
+    
