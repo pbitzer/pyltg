@@ -8,12 +8,14 @@ The "core" classes correspond to the various lightning instrumentats/data source
 - LMA
 - Vaisala (NLDN and GLD360)
 - Earth Networks
-- GLM (in progress)
-- HAMMA (in progress)
+- Lightning Imaging Sensor (LIS)
+- Geostationary Lightning Mapper (GLM)
+- Huntsville Alabama Marx Meter Array (HAMMA) and similar (Level 2 data) 
 
 ### Installing ###
 
-* Clone the repository [https://bitbucket.org/uah_ltg/pyltg]
+* ~~Clone the repository [https://bitbucket.org/uah_ltg/pyltg]~~ *The repository has been moved to Github!*
+* Clone the repository [https://github.com/pbitzer/pyltg/]
 * Go to the `pyltg` directory created and install it with pip:
 ```
 pip install -e .
@@ -54,9 +56,8 @@ Limit the lats and lons to a particular range:
 ```
 lat_bound = [35, 36]
 lon_bound = [-88, -87]
-pare_lma = lma.limit(lats=lat_bound, lons=lon_bound)
+cnt = lma.limit(lats=lat_bound, lons=lon_bound)
 ```
-Right now, a DataFrame is returned, not a object. This will be changed "soon."
 
 Any attribute of the data can be passed into limit. 
 
@@ -64,7 +65,7 @@ Attributes can be accessed directly:
 ```
 my_time = lma.time
 ```
-
+See the example notebook(s) [examples.html] for more information
 
 ### Caveats, Gotchas, etc ###
 
@@ -72,7 +73,7 @@ my_time = lma.time
 * There is a `baseclass` class that is inherited by all the others. Most users have no need for this. Instead, go straight to the class corresponding to the lightning data you're using.
 
 ### Issues ###
-If you run into a bug, please report it [https://bitbucket.org/uah_ltg/pyltg/issues]
+If you run into a bug, please report it [https://github.com/pbitzer/pyltg/issues]
 
 ### Contribution guidelines ###
 
