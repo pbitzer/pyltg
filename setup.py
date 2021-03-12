@@ -20,7 +20,7 @@ setuptools.setup(
     version=get_version("pyltg/__init__.py"),
     author='Phillip Bitzer',
     author_email='bitzerp@uah.edu',
-    description='A package for working with (mostly) Lightning Data',
+    description='A package for working with (mostly) lightning Data',
     long_description=long_descript,
     long_description_content_type='text/markdown',
     url='https://www.nsstc.uah.edu/users/phillip.bitzer/python_doc/pyltg/',
