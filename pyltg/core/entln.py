@@ -45,10 +45,8 @@ class ENTLN(Ltg):
             or less nonsense.
         type : str
             The pulse type, either C (intracloud) or G (cloud-to-ground)
-        amp : numpy.float
-            The peak current of the pulse, in kiloamps. NOTE: THIS WILL BE
-            CHANGED TO `current`
-
+        currrent : numpy.float
+            The peak current of the pulse, in kiloamps.
     """
 
     def __init__(self, filename=None):
@@ -143,8 +141,11 @@ class ENTLN(Ltg):
         # Finally, make the "whole" dataframe
         rawData = pd.concat(rawData, ignore_index=True)
 
+        # Rename the columns
+        rawData.rename(columns={'amp':'current'}, inplace=True)
+
         rawData.alt /= 1e3  # km, please
-        rawData.amp /= 1e3  # kA, please
+        rawData.current /= 1e3  # kA, please
 
         self._add_record(rawData)
 
