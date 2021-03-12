@@ -5,7 +5,6 @@ channels:
 dependencies:
 - numpy
 - netcdf4
-- numpy
 - pandas
 - pip
 - matplotlib
@@ -14,6 +13,8 @@ dependencies:
 - pyproj
 - conda-forge::cartopy
 - pytables
+- pip:
+    - -e .
 
 
 
