@@ -69,6 +69,10 @@ my_time = lma.time
 ```
 See the example notebook(s) [https://www.nsstc.uah.edu/users/phillip.bitzer/python_doc/pyltg/examples.html] for more information.
 
+### Documentation
+
+Documentation for the package can be found at [https://www.nsstc.uah.edu/users/phillip.bitzer/python_doc/pyltg/]
+
 ### Caveats, Gotchas, etc ###
 
 * Under the hood, the data is maintained in a Pandas Dataframe, but for the most part you won't need to interact at that level.
