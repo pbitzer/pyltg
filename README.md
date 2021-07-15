@@ -14,6 +14,8 @@ The "core" classes correspond to the various lightning instruments/data sources:
 
 ### Installing ###
 
+#### Into existing conda/virtual environment ####
+
 * ~~Clone the repository [https://bitbucket.org/uah_ltg/pyltg]~~ *The repository has been moved to Github!*
 * Clone the repository [https://github.com/pbitzer/pyltg/]
 * Go to the `pyltg` directory created and install it with pip:
@@ -25,6 +27,8 @@ pip install -e .
 * Standard science packages are required (e.g., `numpy, pandas, matplotlib`).
 See the `environment.yml` file for a full list of dependencies.
 
+#### Into a new conda environment ####
+
 * Alternatively, you can create a conda environment. For example, for a conda
 environment named `ltg` (after going to the `pyltg` directory cloned):
 ```
@@ -32,11 +36,12 @@ conda env create -f environment.yml
 conda activate ltg
 ```
 
-* For full use of Geostationary Lightning Mapper (GLM) code, you should also 
+For full use of Geostationary Lightning Mapper (GLM) code, you should also 
 install `glmtools`  [https://github.com/deeplycloudy/glmtools]. While you
 can follow the installation discussed there, you can also simply clone the 
 repository and install it with `pip install -e .`  (from within
-the `glmtools` directory created after cloning.)
+the `glmtools` directory created after cloning.) Note you'll need `lmatools`
+as well - see `glmtools` for full dependencies.   
 
 ### Basic Use ###
 
@@ -49,9 +54,10 @@ Say you have an LMA file. You'll want that class:
 from pyltg.core.lma import LMA
 ```
 
-Initialize a instance of the base class:
+Initialize an instance of the LMA class (you can find this file in
+`examples\test_files`)
 ```
-f = "nalma_lylout_20170427_07_3600.dat.gz"
+f = "nalma_lylout_20170427_07_3600_test.dat.gz"
 lma = LMA(f)
 ```
 
@@ -59,10 +65,19 @@ Limit the lats and lons to a particular range:
 ```
 lat_bound = [35, 36]
 lon_bound = [-88, -87]
-cnt = lma.limit(lats=lat_bound, lons=lon_bound)
+cnt = lma.limit(lat=lat_bound, lon=lon_bound)
+print(cnt)  # should get 8243
 ```
 
-Any attribute of the data can be passed into limit. 
+Any attribute of the data can be passed into limit, which you can inspect
+which a very `pandas`-like syntax:
+```
+lma.columns
+```
+
+For any of the core classes, you should always have `time`, `lat`, `lon`, 
+and `alt` as attributes (even for lightning data where altitude 
+doesn't make much sense, e.g., GLM).
 
 Attributes can be accessed directly:
 ```
