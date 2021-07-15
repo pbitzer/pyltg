@@ -40,13 +40,14 @@ the `glmtools` directory created after cloning.)
 
 ### Basic Use ###
 
-Import the package:
-```
-import pyltg
-```
-On package import, the "core" classes are also imported.
+The package has two major uses. One is to read common lightning data.
+The package is structured such that the lightning data is read in by
+"core" modules and associated class. 
 
-Say you have an LMA file. Read in the file at initialization:
+Say you have an LMA file. You'll want that class:
+```
+from pyltg.core.lma import LMA
+```
 
 Initialize a instance of the base class:
 ```
