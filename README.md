@@ -43,6 +43,15 @@ repository and install it with `pip install -e .`  (from within
 the `glmtools` directory created after cloning.) Note you'll need `lmatools`
 as well - see `glmtools` for full dependencies.   
 
+#### Installing without conda ####
+
+Although not recommended for most users, a `requirements.txt` file is included
+to install the package using pip in an environment:
+
+```
+pip install -r requirements.txt
+```
+
 ### Basic Use ###
 
 The package has two major uses. One is to read common lightning data.
