@@ -11,6 +11,6 @@ dependencies:
 - python>=3.6
 - scipy
 - pyproj
-- conda-forge::cartopy
+- cartopy
 - pip:
     - -e .
