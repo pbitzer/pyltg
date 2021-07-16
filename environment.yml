@@ -12,6 +12,5 @@ dependencies:
 - scipy
 - pyproj
 - conda-forge::cartopy
-- pytables
 - pip:
     - -e .
