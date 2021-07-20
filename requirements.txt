@@ -1,9 +1,0 @@
-numpy
-netcdf4
-pandas
-pip
-matplotlib
-scipy
-pyproj
-cartopy
--e .

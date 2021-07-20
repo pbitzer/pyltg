@@ -32,4 +32,17 @@ setuptools.setup(
         'Operating System :: OS Independent',
         ],
     python_requires='>=3.6',
+    install_requires=[
+        'numpy',
+        'netcdf4',
+        'pandas',
+        'matplotlib',
+        'scipy',
+        'pyproj',
+        'cartopy',
+        'pip',
+    ],
+    extras_require={
+        "LMA Flash Sort Read": ["pytables"]
+    },
 )
