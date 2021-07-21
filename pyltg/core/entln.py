@@ -142,7 +142,7 @@ class ENTLN(Ltg):
         rawData = pd.concat(rawData, ignore_index=True)
 
         # Rename the columns
-        rawData.rename(columns={'amp':'current'}, inplace=True)
+        rawData.rename(columns={'amp': 'current'}, inplace=True)
 
         rawData.alt /= 1e3  # km, please
         rawData.current /= 1e3  # kA, please
@@ -179,7 +179,7 @@ def split_file(file):
     # into a dictionary of lists, separated by hour. Then, we'll write
     # everything out.
 
-    data = {x:list() for x in np.arange(24)}
+    data = {x: list() for x in np.arange(24)}
 
     # Get basefilename with path, but w/o extension.
     # Assume multiple extensions (e.g., basename.csv.gz)

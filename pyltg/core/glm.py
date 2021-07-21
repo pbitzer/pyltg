@@ -182,9 +182,11 @@ def search_path(path, time_range, lon_range=None, lat_range=None):
 
         return g
 
+
 def _convert_lon_360_to_180(lons):
     # Small helper to convert a set of 0->360 lons to -180->180
     return ((lons + 180) % 360)-180
+
 
 def _convert_lm_time(lm_time):
     # Simple helper to take the times in LM files are convert to a suitable time
@@ -354,6 +356,7 @@ def read_lm_file(files, keepall=False):
 
     return Ltg(ev), Ltg(all_grp)
 
+
 def read_events_nc(files):
     """
     Read in the nc file produced by the Level 0 reader.
@@ -468,9 +471,11 @@ def event_poly(events, latlon=True,
 
     return poly
 
+
 def filename2date(files):
     # Take a filename and get the start time
-    import datetime, os
+    import datetime
+    import os
 
     t0 = list()
     for _f in np.atleast_1d(files):
@@ -489,6 +494,7 @@ def filename2date(files):
         t0.append(start)
 
     return t0
+
 
 def _extract_groups(glmdata):
     """
@@ -524,6 +530,7 @@ def _extract_groups(glmdata):
 
     return data
 
+
 def _extract_events(glmdata):
     """
     Given a GLMDataset, extract events and relevant attributes
@@ -553,6 +560,7 @@ def _extract_events(glmdata):
 
     return data
 
+
 def _extract_flashes(glmdata):
     # Given a GLMDataset, extract flashes and relevant attributes
 
@@ -578,6 +586,7 @@ def _extract_flashes(glmdata):
     data['alt'] = 0.0
 
     return data
+
 
 def _get_child_count(parent, child):
     # Given a parent and child dataset, find the number of children for
