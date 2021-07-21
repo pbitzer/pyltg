@@ -16,7 +16,7 @@ The "core" classes correspond to the various lightning instruments/data sources:
 
 #### Into existing environment ####
 
-* Clone the repository [https://github.com/pbitzer/pyltg/]
+* Clone the repository: <https://github.com/pbitzer/pyltg/>
 * Go to the `pyltg` directory created and install it with pip:
 ```
 pip install -e .
@@ -25,7 +25,11 @@ pip install -e .
 
 * Standard science packages are required (e.g., `numpy, pandas, matplotlib` 
   and others). See `environment.yml` and/or `setup.py` for a full list of 
-  dependencies.
+  dependencies. 
+  
+* (Note that `pytables` is not in `environment.yml`, 
+  but you'll need it to read in LMA flash sorted files, like those produced
+  by [lmatools](https://github.com/deeplycloudy/lmatools]).) 
 
 #### Into a new conda environment ####
 
@@ -37,7 +41,7 @@ conda activate ltg
 ```
 
 For full use of Geostationary Lightning Mapper (GLM) code, you should also 
-install `glmtools`  [https://github.com/deeplycloudy/glmtools]. While you
+install [glmtools](https://github.com/deeplycloudy/glmtools). While you
 can follow the installation discussed there, you can also simply clone the 
 repository and install it with `pip install -e .`  (from within
 the `glmtools` directory created after cloning.)  
@@ -92,11 +96,11 @@ Attributes can be accessed directly:
 ```
 my_time = lma.time
 ```
-See the example notebook(s) [https://www.nsstc.uah.edu/users/phillip.bitzer/python_doc/pyltg/examples.html] for more information.
+See the example [notebooks](https://www.nsstc.uah.edu/users/phillip.bitzer/python_doc/pyltg/examples.html) for more information.
 
 ### Documentation
 
-Documentation for the package can be found at [https://www.nsstc.uah.edu/users/phillip.bitzer/python_doc/pyltg/]
+Documentation for the package can be found at <https://www.nsstc.uah.edu/users/phillip.bitzer/python_doc/pyltg/>
 
 ### Caveats, Gotchas, etc ###
 
@@ -104,7 +108,7 @@ Documentation for the package can be found at [https://www.nsstc.uah.edu/users/p
 * There is a `baseclass` class that is inherited by all the others. Most users have no need to work with this directly. Instead, go straight to the class corresponding to the lightning data you're using.
 
 ### Issues ###
-If you run into a bug, please report it [https://github.com/pbitzer/pyltg/issues]
+If you run into a bug, please report it <https://github.com/pbitzer/pyltg/issues>
 
 ### Contribution guidelines ###
 
