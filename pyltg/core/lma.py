@@ -14,14 +14,18 @@ Basic use is to just initialize the class with a LMA source file::
 
 For an example of how to use it, see the relevant `example <../overview.html>`_.
 
+If you want to read in a flash sorted file (as those from `lmatools`), you'll
+need to install
+`pytables <https://www.pytables.org/usersguide/installation.html>`. The
+basic conda install should work.
+
 """
 
+from pathlib import Path
 import re
 
 import numpy as np
 import pandas as pd
-
-import tables
 
 from pyltg.core.baseclass import Ltg
 
@@ -168,13 +172,16 @@ class LMA(Ltg):
             which sensors participated in the solution.
 
     """
-    def __init__(self, files=None):
+    def __init__(self, files=None, flash=False):
         """
 
         Parameters
         ----------
         files : str
             The file(s) to be read in.
+        flash : bool
+            If `True`, force reading in of a flash-sorted HDF5 file. Only
+            necessary if the file extension is not `h5`.
         """
 
         super().__init__()  # initialize the inherited baseclass
@@ -183,7 +190,7 @@ class LMA(Ltg):
         self.__colNames()  # mapping from columns in the file to object props
 
         if files is not None:
-            self.readFile(files)
+            self.readFile(files, flash=flash)
 
     def __colNames(self):
         """
@@ -210,7 +217,7 @@ class LMA(Ltg):
                          'P(dBW)': 'power',
                          'mask': 'mask'}
 
-    def readFile(self, files):
+    def readFile(self, files, flash=False):
         """
         Read the given file.
 
@@ -221,6 +228,7 @@ class LMA(Ltg):
         ----------
         files : str
             The file to be read in.
+        flash : bool
 
         """
 
@@ -229,8 +237,12 @@ class LMA(Ltg):
         sources = list()
 
         for _file in files:
-            if tables.is_hdf5_file(_file):
+            if (Path(_file).suffix == '.h5') | flash:
                 this_data = self._readHDF(_file)
+
+                if this_data is None:
+                    continue
+
                 # We need to modify flash IDs when reading multiple files
                 # to ensure they are unique
                 if len(sources) != 0:
@@ -326,6 +338,12 @@ class LMA(Ltg):
         however, so it shouldn't be a big problem.
 
         """
+
+        try:
+            import tables
+        except ImportError as err:
+            print("**** Unable to import tables (pytables). You need this for flash sorted file support ****")
+            return None
 
         with tables.open_file(file) as h5_file:
             # Some of this is _very_ similar to lmatools....

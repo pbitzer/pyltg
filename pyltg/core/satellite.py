@@ -82,7 +82,7 @@ def energy_colors(energies, min_val=None, max_val=None, satellite=None):
 
     colors = np.zeros((len(_values), 3))
 
-    nsteps = 256 # We'll get 256 colors
+    nsteps = 256  # We'll get 256 colors
 
     # Yellow -> Red color map
     redV = np.repeat(np.uint8(255), nsteps)
@@ -98,6 +98,7 @@ def energy_colors(energies, min_val=None, max_val=None, satellite=None):
 
     return colors
 
+
 def get_children(ids, children):
     """
     Get the children of a set of groups or flashes.
@@ -111,7 +112,7 @@ def get_children(ids, children):
     -----------
     ids : array-like or scalar
         The IDs of the groups you want the children of.
-    events : Pandas Dataframe
+    children : Pandas Dataframe
         The possible children. These would usually be a
         set that encompasses more that just those belonging to `ids`.
         Should be similar to output of `GLM.get_events` or `GLM.get_groups`
