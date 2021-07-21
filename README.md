@@ -14,9 +14,8 @@ The "core" classes correspond to the various lightning instruments/data sources:
 
 ### Installing ###
 
-#### Into existing conda/virtual environment ####
+#### Into existing environment ####
 
-* ~~Clone the repository [https://bitbucket.org/uah_ltg/pyltg]~~ *The repository has been moved to Github!*
 * Clone the repository [https://github.com/pbitzer/pyltg/]
 * Go to the `pyltg` directory created and install it with pip:
 ```
@@ -24,8 +23,9 @@ pip install -e .
 ```
 (It is highly recommended that you use the `-e` switch!)
 
-* Standard science packages are required (e.g., `numpy, pandas, matplotlib`).
-See the `environment.yml` file for a full list of dependencies.
+* Standard science packages are required (e.g., `numpy, pandas, matplotlib` 
+  and others). See `environment.yml` and/or `setup.py` for a full list of 
+  dependencies.
 
 #### Into a new conda environment ####
 
@@ -40,16 +40,16 @@ For full use of Geostationary Lightning Mapper (GLM) code, you should also
 install `glmtools`  [https://github.com/deeplycloudy/glmtools]. While you
 can follow the installation discussed there, you can also simply clone the 
 repository and install it with `pip install -e .`  (from within
-the `glmtools` directory created after cloning.) Note you'll need `lmatools`
-as well - see `glmtools` for full dependencies.   
+the `glmtools` directory created after cloning.)  
 
 #### Installing without conda ####
 
-Although not recommended for most users, a `requirements.txt` file is included
-to install the package using pip in an environment:
+Although not recommended for most users, you can install the package using 
+pip in a virtual environment. (This will pull packages from PyPi, 
+not conda. There may some differences in what is available. )
 
 ```
-pip install -r requirements.txt
+pip install -e .
 ```
 
 ### Basic Use ###
