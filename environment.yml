@@ -14,3 +14,4 @@ dependencies:
 - cartopy
 - pip:
     - -e .
+    - lmfit

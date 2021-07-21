@@ -40,9 +40,10 @@ setuptools.setup(
         'scipy',
         'pyproj',
         'cartopy',
+        'lmfit'
         'pip',
     ],
     extras_require={
-        "LMA Flash Sort Read": ["pytables"]
+        "LMA Flash Sort Read": ["pytables"],
     },
 )
