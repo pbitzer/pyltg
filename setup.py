@@ -40,7 +40,7 @@ setuptools.setup(
         'scipy',
         'pyproj',
         'cartopy',
-        'lmfit'
+        'lmfit',
         'pip',
     ],
     extras_require={
