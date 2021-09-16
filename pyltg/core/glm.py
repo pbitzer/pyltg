@@ -924,3 +924,14 @@ class GLM():
             retVal['gridlines'] = gl
 
         return ax, retVal
+    
+    def reset_active(self):
+        """
+        Reset the active state of the underlying Ltg classes. See
+        `pyltg.baseclass.reset_active`.
+
+        """
+        
+        self.events.reset_active()
+        self.groups.reset_active()
+        self.flashes.reset_active()
