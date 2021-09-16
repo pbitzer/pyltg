@@ -363,14 +363,14 @@ def rebin(arr, shape, scheme=None):
     return new_arr
 
 
-def xcorr(data1, data2, times1=None, times2=None):
+def xcorr(data1, data2, times1=None, times2=None, delta=1):
     """
     Given two arrays, find the lag that maximizes the cross correlation.
 
     For two data arrays, usually time series, this function will find the
     lag between the arrays that gives the maximum of the cross correlation.
 
-    Before cross correlating, the mean of each data is subtracted from
+    Before cross correlating, the median of each data is subtracted from
     the data.
 
     If corresponding time arrays for the data is not given, the lag is
@@ -406,22 +406,27 @@ def xcorr(data1, data2, times1=None, times2=None):
         The reference data.
     data2 : array
         The data to be correlated against.
-    times1 : array
+    times1 : array, optional
         The times of each element of `data1`. If given as a `np.datetime64`,
         this will be converted to a 64 bit integer. In this case, the lag
         is units of the `np.datetime64` you use. For example, if
         you provide `np.datetime64[ns]`, then the return value for the lags
         is in units of nanoseconds.
-    times2 : array
+    times2 : array, optional
         The times of each element of `data2`. If given as a `np.datetime64`,
         this will be converted to a 64 bit integer. See `times1` for
         additional notes.
+    delta : numeric, optional
+        If `times1` and `times2` are not given, this is the physical distance
+        between adjacent elements of `data1` and `data2`. If not given, 
+        the returned lag is simply the number of elements in which
+        `data1` lags `data2`.
 
     Returns
     -------
     tuple :
-        - The lag of max correlation. A positive lag means the second array
-          is after the first.
+        - The lag of max correlation. A positive lag means `data1` lags
+          `data2`, i.e., data2 is earlier than data1.  
         - The lags; this will be the index of the lags. The size of the array
           is `data1.size + data2.size-1`
         - The cross correlation: the value of the cross correlation for the lags
@@ -456,8 +461,6 @@ def xcorr(data1, data2, times1=None, times2=None):
         # No times? Just find the lag
         _data1 = data1
         _data2 = data2
-
-        dist_per_lag = 1
     else:
         # Since we have times for each array, we will interpolate the data
         # to a common set of times.
@@ -487,10 +490,10 @@ def xcorr(data1, data2, times1=None, times2=None):
         # Now, we'll go about building the common time grid
         dt1 = np.min(np.diff(times1))
         dt2 = np.min(np.diff(times2))
-        dist_per_lag = np.min((dt1, dt2))
-        dist_per_lag /= 10  # We are going to create a times array on a finer grid
+        delta = np.min((dt1, dt2))
+        delta /= 10  # We are going to create a times array on a finer grid
 
-        times_common = np.arange(0, max_t-min_t, dist_per_lag)
+        times_common = np.arange(0, max_t-min_t, delta)
 
         # Now, interpolate the data to this grid
         _data1 = intp1(times_common)
@@ -498,8 +501,8 @@ def xcorr(data1, data2, times1=None, times2=None):
 
     # Before correlation, we should subtract off means:
     # Note: avoiding compound ops to avoid any mutablity issues
-    _data1 = _data1 - np.mean(_data1)
-    _data2 = _data2 - np.mean(_data2)
+    _data1 = _data1 - np.median(_data1)
+    _data2 = _data2 - np.median(_data2)
 
     # Do the cross correlation, sweeping the data over each other.
     # This will return data1.size+data2.size-1 elements
@@ -511,7 +514,7 @@ def xcorr(data1, data2, times1=None, times2=None):
     lags = np.arange(cross_corr.size) - (_data1.size-1)
 
     # Get the lags for the max of the correlation.
-    loc = -lags[max_ind] * dist_per_lag
+    loc = lags[max_ind] * delta
 
     return loc, lags, cross_corr
     
