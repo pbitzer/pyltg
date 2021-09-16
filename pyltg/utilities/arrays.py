@@ -131,7 +131,6 @@ def rotation_matrix(yaw, pitch, roll):
         ])
 
     return rot_matrix
-    # return np.dot( np.dot(m_yaw, m_pitch), m_roll)
 
 def perturb_points(x, y, delta=1, npts=16):
     """
@@ -176,8 +175,6 @@ def perturb_points(x, y, delta=1, npts=16):
     py = py.flatten()
 
     return px, py
-
-
 def hull_get_path(hull):
     """
     Given a ConvexHull using `scipy.spatial`, get the path defined by the vertices.
@@ -208,7 +205,6 @@ def hull_get_path(hull):
                        hull.points[hull.vertices[0], 1])
 
     return path_x, path_y
-
 
 def histo_bins(data, bins=None, min_val=None, max_val=None):
     """
@@ -518,7 +514,7 @@ def xcorr(data1, data2, times1=None, times2=None):
     loc = -lags[max_ind] * dist_per_lag
 
     return loc, lags, cross_corr
-
+    
 def array2record(loc):
     """
     Convert a 3D array to a NumPy record array with fields `x, y, z`
