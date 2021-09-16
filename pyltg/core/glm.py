@@ -514,6 +514,7 @@ def _extract_groups(glmdata):
 
     data = pd.DataFrame({
         'time': glmdata.dataset.group_time_offset.values,
+        'time_frame': glmdata.dataset.group_frame_time_offset.values,
         'lat': glmdata.dataset.group_lat.values,
         'lon': glmdata.dataset.group_lon.values,
         'energy': glmdata.dataset.group_energy.values,
