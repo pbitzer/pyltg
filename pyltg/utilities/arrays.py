@@ -28,7 +28,7 @@ def rotation_z_matrix(angle):
 
     rot_z = np.array([
         [cos, -sin, 0],
-        [sin, cos, 0]
+        [sin, cos, 0],
         [0, 0, 1]
         ])
 
