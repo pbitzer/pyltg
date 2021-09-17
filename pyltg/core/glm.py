@@ -356,8 +356,7 @@ def read_lm_file(files, keepall=False):
 
     return Ltg(ev), Ltg(all_grp)
 
-
-def read_events_nc(files):
+def read_events_nc(files, no_error=True):
     """
     Read in the nc file produced by the Level 0 reader.
 
@@ -370,6 +369,10 @@ def read_events_nc(files):
     -----------
     files: str or sequence of string
         The files to read in
+    no_error: bool
+        If True, then throw out any events associated with an error. Right now,
+        this keyword has no effect - error events are always dropped.
+        (In the future, we'll add an option to keep them!)
     """
 
     import xarray as xr
@@ -381,11 +384,16 @@ def read_events_nc(files):
     for f in files:
         ev = xr.open_dataset(f, decode_times=False)
 
-        ev = ev.to_dataframe()
+        if (ev.error_count != 0) & True: # TODO Add ability to keep error events
+            ev = ev.drop_dims('number_of_errors')
 
-        # Drop the scalar columns
-        ev.drop(columns=['event_count', 'error_count',
-                         'spw_dropped_event_count'], inplace=True)
+        # There's a few scalar variables we don't keep, as they become
+        # columns that all have the same value:
+        ev = ev.drop(['event_count', 'error_count',
+                         'spw_dropped_event_count'])
+
+        # Now, we should be able to get to a DataFrame that's sensible...
+        ev = ev.to_dataframe()
 
         # Now, we build the time. It takes some awkward code gymnastics...
         time = (np.datetime64('2000-01-01T12', 'ns')
@@ -397,7 +405,7 @@ def read_events_nc(files):
 
         data.append(ev)
 
-    data = Ltg(pd.concat(data))
+    data = Ltg(pd.concat(data, ignore_index=True))
 
     return data
 
@@ -514,6 +522,7 @@ def _extract_groups(glmdata):
 
     data = pd.DataFrame({
         'time': glmdata.dataset.group_time_offset.values,
+        'time_frame': glmdata.dataset.group_frame_time_offset.values,
         'lat': glmdata.dataset.group_lat.values,
         'lon': glmdata.dataset.group_lon.values,
         'energy': glmdata.dataset.group_energy.values,
@@ -924,3 +933,14 @@ class GLM():
             retVal['gridlines'] = gl
 
         return ax, retVal
+    
+    def reset_active(self):
+        """
+        Reset the active state of the underlying Ltg classes. See
+        `pyltg.baseclass.reset_active`.
+
+        """
+        
+        self.events.reset_active()
+        self.groups.reset_active()
+        self.flashes.reset_active()
