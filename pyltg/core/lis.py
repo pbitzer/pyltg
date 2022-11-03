@@ -1157,15 +1157,20 @@ class LIS():
         for _file in files:
             # todo: with...open
             nc = Dataset(_file)
-
-            this_ev = _extract_events(nc)
-            this_grp = _extract_groups(nc)
-            this_fl = _extract_flashes(nc)
-            this_one_sec = _extract_one_second(nc, background=False)
-
-            nc.close()
-
-            # TODO: do we need check for "empty" files like w/GLM?
+            
+            if 'lightning_event_TAI93_time' not in nc.variables.keys():
+                # Uh, there's no event data in this file? 
+                print(f'No event data in {_file}')
+                nc.close()
+                # Note: if reading in one file, and there's no data in the file
+                # you're going to have problems later....
+                continue
+            else:
+                this_ev = _extract_events(nc)
+                this_grp = _extract_groups(nc)
+                this_fl = _extract_flashes(nc)
+                this_one_sec = _extract_one_second(nc, background=False)
+                nc.close()
 
             # IDs are not necessarily unique. We'll modify them so they are.
             # Similar to what is done with GLM data (glm.py in this package)
