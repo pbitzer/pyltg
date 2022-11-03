@@ -488,14 +488,13 @@ def filename2date(files):
     t0 = list()
     for _f in np.atleast_1d(files):
 
-        this_file = os.path.splitext(_f)[0]
+        this_file = os.path.basename(_f)  # no path, thanks
+        this_file = os.path.splitext(this_file)[0]  # no extension, thanks
 
         parts = this_file.split('_')
 
-        # Start time is in the third to last element:
-        # check start with s?
-
-        start = datetime.datetime.strptime(parts[-3][1:-1], '%Y%j%H%M%S')
+        # Start time is in one of these fields:
+        start = datetime.datetime.strptime(parts[idx][1:-1], '%Y%j%H%M%S')
         start = np.datetime64(start)
 
         # do we need fractional seconds?
