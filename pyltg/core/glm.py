@@ -480,8 +480,29 @@ def event_poly(events, latlon=True,
     return poly
 
 
-def filename2date(files):
-    # Take a filename and get the start time
+def filename2date(files, idx=3):
+    """
+    Get the date/time from a GLM filename.
+    
+    Slightly modified from the version in `glmtools`.
+
+    Parameters
+    ----------
+    files : list-like strings
+        The filenames to look at for the start times. Should be the base
+        file name (with extension).
+    idx : int, optional
+        The field to look for the start time. For L2 files, the default
+        of 3 is correct. For some L0 files, the index should be 2. 
+
+    Returns
+    -------
+    list : 
+        A n-element list of NumPy datetime64's with the start times of the
+        data in the files. 
+
+    """
+    
     import datetime
     import os
 
