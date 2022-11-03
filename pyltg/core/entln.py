@@ -84,9 +84,9 @@ class ENTLN(Ltg):
         # Define the columns/types, as they are in the file
         types = {'flashPortionHistoryID': np.int64, 'flashPortionID': str, 'flashID': str,
                  'nullTime': str, 'time': str,
-                 'lat': np.float, 'lon': np.float, 'alt': np.float,
+                 'lat': float, 'lon': float, 'alt': float,
                  'type': str,
-                 'amp': np.float}
+                 'amp': float}
 
         # Make a dict for the keywords to read_csv, no matter what:
         pdArgs = {'skiprows': 1,
