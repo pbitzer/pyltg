@@ -37,6 +37,45 @@ def _fix_fields(data: pd.DataFrame):
 
     return data
 
+
+def _exclude_fields():
+    # Define the fields to be excluded when reading in JSON files.
+    pulse_fields = [
+        'kafkaInsertionEpoch',
+        'id',
+        'region',
+        'version',
+        'stationsDetecting',
+        'fifthNearestSensorDistance',
+        'residual',
+        'solutionCount'
+        'stationAmplitudes',
+        'stationOffsets',
+        'stationsOn',
+        'stationsDetecting',
+        'altTimeCorrection',
+        'altQuality',
+        'altAlgorithm',
+        'biggestAngle',
+        'waveformSignature',
+        'classificationConfidence',
+        'height',  # seems to be duplicated by altitude field
+        'riseTime',
+        'fallTime',
+        'halfWidth',
+    ]
+
+    flash_fields = [
+        'flashGuid',
+        'version',
+        'boundingBox',
+        'buddies',
+        'buddiesTimeStamps',
+        'duration',
+    ]
+
+    return pulse_fields, flash_fields
+
 def _read_json(file, get_flashes=False):
     """
     Read in JSON-formatted ENTLN pulse files.
