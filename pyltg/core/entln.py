@@ -18,6 +18,25 @@ import pandas as pd
 from pyltg.core.baseclass import Ltg
 
 
+def _fix_fields(data: pd.DataFrame):
+    # Rename fields and convert units
+
+    data.rename(columns=
+                {'amplitude': 'current',
+                 'altitude': 'alt',
+                 'timeStamp': 'time',
+                 'latitude': 'lat',
+                 'longitude': 'lon',
+                 'numSensors': 'num_sensors'
+                 },
+                inplace=True)
+
+    data.alt /= 1e3  # km, please
+    data.current /= 1e3  # kA, please
+    data.time = data.time.astype(np.datetime64)
+
+    return data
+
 def _read_json(file, get_flashes=False):
     """
     Read in JSON-formatted ENTLN pulse files.
