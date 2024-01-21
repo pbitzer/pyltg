@@ -18,6 +18,108 @@ import pandas as pd
 from pyltg.core.baseclass import Ltg
 
 
+def _read_json(file, get_flashes=False):
+    """
+    Read in JSON-formatted ENTLN pulse files.
+
+    Parameters
+    ----------
+    file: str
+        The file name(s) to be read in. (Multiple filenames OK.)
+        For multiple filenames, use list-like type.
+    get_flashes : bool, default: False
+        If true, get the flash data in the file. Right now, this
+        gets returned as a separate `Ltg` class.
+
+        Likely to be changed in the future.
+
+    Returns
+    -------
+    Pandas dataframe with pulses, unless `get_flashes` is set.
+    If so, then two `Ltg` classes are returned as a list: `[pulses, flashes]'
+    (see note in the `get_flashes` parameter about future).
+
+    """
+    import json
+    flashes = list()
+    pulses = list()
+
+    not_needed_pulse_fields, not_needed_flash_fields = _exclude_fields()
+
+    # TODO Need flash id for tracking, and assign to pulse
+    with open(file, 'r') as of:
+        # Read in the file, but do it line-by-line.
+        # Necessary because of how the files are formatted.
+        for line in of:
+            this_val = json.loads(line)
+
+            # Separate out flashes and pulses
+            this_pulses = this_val.pop('pulses')
+
+            # Clean the pulses a bit
+            for _p in this_pulses:
+                # Get rid of the fields we don't need
+                for _nn in not_needed_pulse_fields:
+                    try:
+                        del _p[_nn]
+                    except KeyError:
+                        pass
+
+                # Unpack error ellipse
+                err = _p.pop('errorEllipse')
+
+                if err is not None:
+                    major, minor, ellp = err['majorAxis'], err['minorAxis'], err['majorAxisBearing']
+                else:
+                    major, minor, ellp = np.nan, np.nan, np.nan
+
+                _p['err_major_axis'] = major
+                _p['err_minor_axis'] = minor
+                _p['err_axis_bearing'] = ellp
+
+            pulses.extend(this_pulses)
+
+            # Now, the flashes!
+            if get_flashes:
+                # Get rid of the fields we don't need
+                for _nn in not_needed_flash_fields:
+                    try:
+                        del this_val[_nn]
+                    except KeyError:
+                        pass
+
+                flashes.append(this_val)
+
+    # Do a little data sanitization....
+    pulses = pd.DataFrame(pulses)
+    pulses = _fix_fields(pulses)
+
+    if get_flashes:
+        flashes = pd.DataFrame(flashes)
+
+        # Clean the flashes a bit.
+        # First, the fields not handled internally:
+        flashes.rename(columns=
+                       {'startTimeStamp': 'start_time',
+                        'endTimeStamp': 'end_time',
+                        'height': 'alt',
+                        },
+                       inplace=True
+                       )
+        flashes.start_time = flashes.start_time.astype(np.datetime64)
+        flashes.end_time = flashes.end_time.astype(np.datetime64)
+
+        # Now the rest
+        flashes = _fix_fields(flashes)
+
+    if get_flashes:
+        retval = [pulses, flashes]
+    else:
+        retval = pulses
+
+    return retval
+
+
 class ENTLN(Ltg):
     """
     Class to handle Earth Networks Total Lightning Network data.
