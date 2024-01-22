@@ -178,6 +178,94 @@ def _read_json(file, get_flashes=False):
     return retval
 
 
+def read_ascii(file, full=False):
+    """
+     Read the data from a filename(s) for an ASCII ENTLN pulse file.
+
+     Parameters
+     ----------
+     file: str
+         The file name(s) to be read in. (Multiple filenames OK.)
+         For multiple filenames, use list-like type.
+     full : bool, default: False
+         If true, try to read in some of the solution attributes.
+         Experimental.
+
+    Returns
+    -------
+    Pandas dataframe
+
+    """
+
+    # Define the columns/types, as they are in the file
+    types = {'flashPortionHistoryID': np.int64, 'flashPortionID': str, 'flashID': str,
+             'nullTime': str, 'time': str,
+             'lat': np.float, 'lon': np.float, 'alt': np.float,
+             'type': str,
+             'amp': np.float}
+
+    # Make a dict for the keywords to read_csv, no matter what:
+    pdArgs = {'skiprows': 1,
+              'chunksize': 1000000}
+
+    if full:
+        # We're going to try to read some solution attributes
+        # (but not all!)
+        nExtra = 8
+        extraNames = ['extra' + str(i).zfill(3) for i in np.arange(nExtra)]
+        extraTypes = [str for i in np.arange(nExtra)]
+        extra = dict(zip(extraNames, extraTypes))
+        types = {**types, **extra}
+    else:
+        # If we're not doing full, add a couple more keywords
+        # to read in faster
+        pdArgs.update({'comment': "{",
+                       'na_filter': False})
+
+    # Finally, add in the rest of the keywords:
+    # (Needs to be after the check for full in case we get more fields)
+    pdArgs.update({'names': list(types.keys()),
+                   'usecols': list(types.keys()),
+                   'dtype': types})
+
+    # We'll read the chunks into a list:
+    rawData = list()
+
+    for this_file in np.atleast_1d(filename):
+
+        reader = pd.read_csv(this_file, **pdArgs)
+
+        for chunk in reader:
+            # The first two columns are not relevant for us, and
+            # the "nullTime" field is largely redundant:
+            # AUTHOR NOTE: Never could get usecols to work to not
+            # have to do this
+            chunk.drop(['flashPortionHistoryID', 'flashPortionID',
+                        'nullTime'], axis=1, inplace=True)
+
+            # Reinterpret the time string field as datetime64:
+            chunk.time = chunk.time.astype('datetime64')
+
+            # change the ype field to a string of G or C (for CG/IC)
+            chunk.type.replace(to_replace={'0': 'G', '1': 'C'},
+                               inplace=True)
+
+            # todo: process the "extra: fields
+            # todo: change flashID to some sort of integer (from string)
+            rawData.append(chunk)
+
+    # Finally, make the "whole" dataframe
+    rawData = pd.concat(rawData, ignore_index=True)
+
+    # TODO use fix_fields
+    # Rename the columns
+    rawData.rename(columns={'amp': 'current'}, inplace=True)
+
+    rawData.alt /= 1e3  # km, please
+    rawData.current /= 1e3  # kA, please
+
+    return rawData
+
 class ENTLN(Ltg):
     """
     Class to handle Earth Networks Total Lightning Network data.
