@@ -76,7 +76,7 @@ def _exclude_fields():
 
     return pulse_fields, flash_fields
 
-def _read_json(file, get_flashes=False):
+def read_json(file, get_flashes=False):
     """
     Read in JSON-formatted ENTLN pulse files.
 
