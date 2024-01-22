@@ -5,10 +5,26 @@ Module for Earth Networks Total Lightning Network (ENTLN) data.
 
 Examples
 ---------
-Basic use is to just initialize the class with a ENTLN pulse file::
+ENTLN files that contain pulse data come in two different types:
+legacy CSV gzipped files and new(er) JSON files, which have both flashes
+and pulses.
 
+To read in JSON files:
     f = 'LtgFlashPortions20180403.csv.gz'
     eni = ENTLN(f)
+
+Older use is to just initialize the class with a ENTLN pulse file::
+
+    f = 'FLASHES_2023-12-18T01-10.json'
+    eni = ENTLN(f)
+
+If you want flash data from a JSON file, you can get it. However, it
+won't be loaded into a `Ltg` class (yet). But if you want it, you can do it:
+
+    f = 'FLASHES_2023-12-18T01-10.json'
+    pulses, flashes = read_json(f, get_flashes=True)
+    eni_fl = ENTLN()
+    eni_fl._add_record(flashes)
 
 """
 
@@ -270,7 +286,6 @@ class ENTLN(Ltg):
     """
     Class to handle Earth Networks Total Lightning Network data.
 
-
     Many of the following are not attributes of the class, but
     are columns in the underlying Dataframe. But, you can access them
     as you would an attribute....
@@ -316,17 +331,23 @@ class ENTLN(Ltg):
 
     def readFile(self, filename, file_type=None):
         """
-        Given a filename(s), load the data into the object.
+        Read the data from a filename(s) for an ENTLN file.
+
+        You can read in either ENTLN pulse ASCII files or JSON files
+        with both pulses and flashes. See the functions (not methods)
+        `read_ascii` and `read_json`. This method will attempt to figure out
+        which one based on the file
+        extension.
 
         Parameters
         ----------
         filename: str
             The file name(s) to be read in. (Multiple filenames OK.)
             For multiple filenames, use list-like type.
-        full : bool, default: False
-            If true, try to read in some of the solution attributes.
-            Experimental.
-
+        file_type: str
+            The type of file(s) to be read in. If None, the type of file will
+            be guessed from the extenstion. Current allowed values are either
+            'JSON' or 'GZ'.
         """
 
         if file_type is None:
