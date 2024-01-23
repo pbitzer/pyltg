@@ -121,48 +121,50 @@ def read_json(file, get_flashes=False):
     not_needed_pulse_fields, not_needed_flash_fields = _exclude_fields()
 
     # TODO Need flash id for tracking, and assign to pulse
-    with open(file, 'r') as of:
-        # Read in the file, but do it line-by-line.
-        # Necessary because of how the files are formatted.
-        for line in of:
-            this_val = json.loads(line)
+    for f in np.atleast_1d(file):
+        with open(f, 'r') as of:
+            # Read in the file, but do it line-by-line.
+            # Necessary because of how the files are formatted.
+            for line in of:
+                this_val = json.loads(line)
 
-            # Separate out flashes and pulses
-            this_pulses = this_val.pop('pulses')
+                # Separate out flashes and pulses
+                this_pulses = this_val.pop('pulses')
 
-            # Clean the pulses a bit
-            for _p in this_pulses:
-                # Get rid of the fields we don't need
-                for _nn in not_needed_pulse_fields:
-                    try:
-                        del _p[_nn]
-                    except KeyError:
-                        pass
+                # Clean the pulses a bit
+                for _p in this_pulses:
+                    # Get rid of the fields we don't need
+                    for _nn in not_needed_pulse_fields:
+                        try:
+                            del _p[_nn]
+                        except KeyError:
+                            pass
 
-                # Unpack error ellipse
-                err = _p.pop('errorEllipse')
+                    # Unpack error ellipse
+                    err = _p.pop('errorEllipse')
 
-                if err is not None:
-                    major, minor, ellp = err['majorAxis'], err['minorAxis'], err['majorAxisBearing']
-                else:
-                    major, minor, ellp = np.nan, np.nan, np.nan
+                    # And add it back
+                    if err is not None:
+                        major, minor, ellp = err['majorAxis'], err['minorAxis'], err['majorAxisBearing']
+                    else:
+                        major, minor, ellp = np.nan, np.nan, np.nan
 
-                _p['err_major_axis'] = major
-                _p['err_minor_axis'] = minor
-                _p['err_axis_bearing'] = ellp
+                    _p['err_major_axis'] = major
+                    _p['err_minor_axis'] = minor
+                    _p['err_axis_bearing'] = ellp
 
-            pulses.extend(this_pulses)
+                pulses.extend(this_pulses)
 
-            # Now, the flashes!
-            if get_flashes:
-                # Get rid of the fields we don't need
-                for _nn in not_needed_flash_fields:
-                    try:
-                        del this_val[_nn]
-                    except KeyError:
-                        pass
+                # Now, the flashes!
+                if get_flashes:
+                    # Get rid of the fields we don't need
+                    for _nn in not_needed_flash_fields:
+                        try:
+                            del this_val[_nn]
+                        except KeyError:
+                            pass
 
-                flashes.append(this_val)
+                    flashes.append(this_val)
 
     # Do a little data sanitization....
     pulses = pd.DataFrame(pulses)
