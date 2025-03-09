@@ -134,7 +134,7 @@ class Ltg(object):
 
         # If there's no record, we need to "initialize" the property a little differently...
         if num_rec == 0:
-            self._data = self.data.append(data, ignore_index=True, sort=False)
+            self._data = pd.concat([self.data, data], ignore_index=True, sort=False)
             self._verify_columns()
         else:
             # TODO: make sure the record columns match the existing ones

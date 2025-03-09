@@ -3,6 +3,7 @@
 Functions for various operations while plotting (usually) with Matplotlib
 """
 
+import numpy as np 
 
 def gap_nan(arr1, arr2, gap):
     """
@@ -116,8 +117,12 @@ def get_actual_ticks(axis):
     return goodTicks
 
 
-def time_axis(axis, relative=True, title=True):
+def _time_axis(axis, relative=True, title=True):
     """
+
+    .. deprecated::
+              This will be removed in a future version.
+
     Given a Matplotlib axis, format the ticks in a "time" format.
 
     Sometimes, the default formatting of Matplotlib is quite terrible. This
@@ -180,3 +185,65 @@ def time_axis(axis, relative=True, title=True):
         xTitle = 'Time (' + timeUnitLabel + '); Origin time: ' \
             + str(t0Plot.astype('datetime64[ns]')).split('T')[1]
         axis.set_label_text(xTitle)
+
+
+def time_axis_label(ax, t0=None, which_ax = 'x'):
+    """
+    Given an Axes with a xaxis corresponding to times, label the axes with
+    more readable ticks.
+
+    Parameters
+    -----------
+    ax: MPL Axes
+        The Axes containing the "sub"axis to be modified.
+    t0: numpy datetime64[ns]
+        The origin of the plot. Only used for labeling. This will get cast
+        to datetime64[ns] if it isn't already.
+    which_ax: str
+        Which axis to label, either 'x' or 'y'.
+
+    Returns
+    --------
+    tuple:
+        Two elements are returned: exponent and label. The label is the label on
+        the axis. The exponent corresponds to the unit used, in tens of nanoseconds.
+        So, an exponent of 9 means the units are 10^9 ns, i.e., seconds.
+    """
+
+    which_ax = 'x'  # eventually, we could make this a keyword
+
+    if which_ax == 'x':
+        this_ax = ax.xaxis
+        t_range = ax.get_xlim()
+    elif which_ax == 'y':
+        this_ax = ax.yaxis
+        t_range = ax.get_ylim()
+
+    # Get the range of the axis
+    time_delta = t_range[1] - t_range[0]
+
+    pwr = np.floor(np.log10(time_delta))
+
+    # Define possible increments for the units and their corresponding labels
+    exp_range = np.array([9, 6, 3, 0])
+    exp_title = ['sec', 'ms', '$\mu$s', 'ns']
+
+    exp_idx = np.digitize(pwr, exp_range)
+    exp_idx = np.clip(exp_idx, 0, len(exp_range)-1)
+
+    exp = exp_range[exp_idx]
+    exp_title = exp_title[exp_idx]
+
+    # Use this exponent for the multiplier.
+    ax.ticklabel_format(axis='x', scilimits=(exp, exp))
+
+    this_ax.offsetText.set_visible(False)
+
+    the_label = exp_title
+
+    if t0 is not None:
+        the_label += '; Origin: ' + t0.astype('datetime64[ns]').astype('str')
+
+    this_ax.set_label_text(the_label)
+
+    return exp, the_label

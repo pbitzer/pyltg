@@ -182,9 +182,11 @@ def search_path(path, time_range, lon_range=None, lat_range=None):
 
         return g
 
+
 def _convert_lon_360_to_180(lons):
     # Small helper to convert a set of 0->360 lons to -180->180
     return ((lons + 180) % 360)-180
+
 
 def _convert_lm_time(lm_time):
     # Simple helper to take the times in LM files are convert to a suitable time
@@ -354,7 +356,7 @@ def read_lm_file(files, keepall=False):
 
     return Ltg(ev), Ltg(all_grp)
 
-def read_events_nc(files):
+def read_events_nc(files, no_error=True):
     """
     Read in the nc file produced by the Level 0 reader.
 
@@ -367,6 +369,10 @@ def read_events_nc(files):
     -----------
     files: str or sequence of string
         The files to read in
+    no_error: bool
+        If True, then throw out any events associated with an error. Right now,
+        this keyword has no effect - error events are always dropped.
+        (In the future, we'll add an option to keep them!)
     """
 
     import xarray as xr
@@ -378,11 +384,16 @@ def read_events_nc(files):
     for f in files:
         ev = xr.open_dataset(f, decode_times=False)
 
-        ev = ev.to_dataframe()
+        if (ev.error_count != 0) & True: # TODO Add ability to keep error events
+            ev = ev.drop_dims('number_of_errors')
 
-        # Drop the scalar columns
-        ev.drop(columns=['event_count', 'error_count',
-                         'spw_dropped_event_count'], inplace=True)
+        # There's a few scalar variables we don't keep, as they become
+        # columns that all have the same value:
+        ev = ev.drop(['event_count', 'error_count',
+                         'spw_dropped_event_count'])
+
+        # Now, we should be able to get to a DataFrame that's sensible...
+        ev = ev.to_dataframe()
 
         # Now, we build the time. It takes some awkward code gymnastics...
         time = (np.datetime64('2000-01-01T12', 'ns')
@@ -394,7 +405,7 @@ def read_events_nc(files):
 
         data.append(ev)
 
-    data = Ltg(pd.concat(data))
+    data = Ltg(pd.concat(data, ignore_index=True))
 
     return data
 
@@ -468,27 +479,50 @@ def event_poly(events, latlon=True,
 
     return poly
 
-def filename2date(files):
-    # Take a filename and get the start time
-    import datetime, os
+
+def filename2date(files, idx=3):
+    """
+    Get the date/time from a GLM filename.
+    
+    Slightly modified from the version in `glmtools`.
+
+    Parameters
+    ----------
+    files : list-like strings
+        The filenames to look at for the start times. Should be the base
+        file name (with extension).
+    idx : int, optional
+        The field to look for the start time. For L2 files, the default
+        of 3 is correct. For some L0 files, the index should be 2. 
+
+    Returns
+    -------
+    list : 
+        A n-element list of NumPy datetime64's with the start times of the
+        data in the files. 
+
+    """
+    
+    import datetime
+    import os
 
     t0 = list()
     for _f in np.atleast_1d(files):
 
-        this_file = os.path.splitext(_f)[0]
+        this_file = os.path.basename(_f)  # no path, thanks
+        this_file = os.path.splitext(this_file)[0]  # no extension, thanks
 
         parts = this_file.split('_')
 
-        # Start time is in the third to last element:
-        # check start with s?
-
-        start = datetime.datetime.strptime(parts[-3][1:-1], '%Y%j%H%M%S')
+        # Start time is in one of these fields:
+        start = datetime.datetime.strptime(parts[idx][1:-1], '%Y%j%H%M%S')
         start = np.datetime64(start)
 
         # do we need fractional seconds?
         t0.append(start)
 
     return t0
+
 
 def _extract_groups(glmdata):
     """
@@ -508,6 +542,7 @@ def _extract_groups(glmdata):
 
     data = pd.DataFrame({
         'time': glmdata.dataset.group_time_offset.values,
+        'time_frame': glmdata.dataset.group_frame_time_offset.values,
         'lat': glmdata.dataset.group_lat.values,
         'lon': glmdata.dataset.group_lon.values,
         'energy': glmdata.dataset.group_energy.values,
@@ -523,6 +558,7 @@ def _extract_groups(glmdata):
     data['alt'] = 0.0
 
     return data
+
 
 def _extract_events(glmdata):
     """
@@ -553,6 +589,7 @@ def _extract_events(glmdata):
 
     return data
 
+
 def _extract_flashes(glmdata):
     # Given a GLMDataset, extract flashes and relevant attributes
 
@@ -578,6 +615,7 @@ def _extract_flashes(glmdata):
     data['alt'] = 0.0
 
     return data
+
 
 def _get_child_count(parent, child):
     # Given a parent and child dataset, find the number of children for
@@ -915,3 +953,14 @@ class GLM():
             retVal['gridlines'] = gl
 
         return ax, retVal
+    
+    def reset_active(self):
+        """
+        Reset the active state of the underlying Ltg classes. See
+        `pyltg.baseclass.reset_active`.
+
+        """
+        
+        self.events.reset_active()
+        self.groups.reset_active()
+        self.flashes.reset_active()

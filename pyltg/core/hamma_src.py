@@ -282,7 +282,6 @@ class HAMMA(Ltg):
 
         col_names = [col for col in self.data.columns if col.startswith('arrival')]
 
-
         if np.isscalar(idx):
             n_locations = 1
 
