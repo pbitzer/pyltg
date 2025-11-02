@@ -1519,8 +1519,10 @@ class LIS_Background():
                       self.bg_data[idx].T, transform=ll_proj,
                       alpha=0.8, cmap='bone')
 
-        _ = ax.add_feature(cfeature.LAND, facecolor='burlywood')
-        _ = ax.add_feature(cfeature.OCEAN, facecolor='steelblue')
+        # Use high-resolution coastline data for better detail (10m resolution)
+        _ = ax.add_feature(cfeature.LAND.with_scale('10m'), facecolor='burlywood')
+        _ = ax.add_feature(cfeature.OCEAN.with_scale('10m'), facecolor='steelblue')
+        _ = ax.add_feature(cfeature.COASTLINE.with_scale('10m'), linewidth=0.5, edgecolor='black')
 
         _ = ax.gridlines(draw_labels=True, linestyle=':')
 
