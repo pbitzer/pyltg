@@ -1519,8 +1519,15 @@ class LIS_Background():
                       self.bg_data[idx].T, transform=ll_proj,
                       alpha=0.8, cmap='bone')
 
-        _ = ax.add_feature(cfeature.LAND, facecolor='burlywood')
-        _ = ax.add_feature(cfeature.OCEAN, facecolor='steelblue')
+        # Use high-resolution Natural Earth data (10m scale)
+        land = cfeature.NaturalEarthFeature('physical', 'land', '10m',
+                                             edgecolor='face',
+                                             facecolor='burlywood')
+        ocean = cfeature.NaturalEarthFeature('physical', 'ocean', '10m',
+                                              edgecolor='face',
+                                              facecolor='steelblue')
+        _ = ax.add_feature(land)
+        _ = ax.add_feature(ocean)
 
         _ = ax.gridlines(draw_labels=True, linestyle=':')
 
