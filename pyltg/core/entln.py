@@ -49,7 +49,7 @@ def _fix_fields(data: pd.DataFrame):
 
     data.alt /= 1e3  # km, please
     data.current /= 1e3  # kA, please
-    data.time = data.time.astype(np.datetime64)
+    data.time = data.time.astype('datetime64[ns]')
 
     return data
 
