@@ -196,7 +196,7 @@ def enu2lla(x, y, z, center):
                                             direction='INVERSE'))
 
     # Now, we want to return this as a record array, but convert the alt to km:
-    dtype = [('lon', np.float), ('lat', np.float), ('alt', np.float)]
+    dtype = [('lon', float), ('lat', float), ('alt', float)]
     lla = np.core.records.fromarrays([lla[0], lla[1], lla[2]/1e3],
                                      dtype=dtype)
 
