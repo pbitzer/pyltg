@@ -28,6 +28,8 @@ won't be loaded into a `Ltg` class (yet). But if you want it, you can do it:
 
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -169,6 +171,12 @@ def read_json(file, get_flashes=False):
     # Do a little data sanitization....
     pulses = pd.DataFrame(pulses)
     pulses = _fix_fields(pulses)
+
+    # Convert type field from numeric to string (0='G', 1='C')
+    # to match the format from ASCII files
+    # Type 40 appears in some files - unknown meaning, convert to 'U'
+    if 'type' in pulses.columns:
+        pulses['type'] = pulses['type'].replace({0: 'G', 1: 'C', 40: 'U'})
 
     if get_flashes:
         flashes = pd.DataFrame(flashes)
