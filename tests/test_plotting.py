@@ -12,6 +12,8 @@ from pathlib import Path
 from pyltg.core.baseclass import Ltg
 from pyltg.core.lma import LMA
 from pyltg.core.hamma_src import HAMMA
+from pyltg.core.entln import ENTLN
+from pyltg.core.nldn import NLDN
 
 INTERNAL_DATA = Path(__file__).parent.parent / 'pyltg' / 'internal_testing_files'
 PRIVATE_DATA = Path(__file__).parent.parent / 'private_data_for_tests'
@@ -147,5 +149,27 @@ def test_hamma_quick_plot_zt():
     f = INTERNAL_DATA / '2018-11-10T19-47-49-776_1001_9.txt'
     h = HAMMA(str(f))
     val = h.quick_plot('zt')
+    assert val is not None
+    plt.close('all')
+
+
+def test_entln_quick_plot_ll():
+    f = PRIVATE_DATA / 'LtgFlashPortions20180403_mini.csv'
+    if not f.exists():
+        pytest.skip('Private test data not available')
+    eni = ENTLN(str(f))
+    eni.limit(lat=[0, 5], lon=[-75, -70])
+    val = eni.quick_plot('ll')
+    assert val is not None
+    plt.close('all')
+
+
+def test_nldn_quick_plot_ll():
+    f = PRIVATE_DATA / 'vaistrokertns_20190824_daily_v1_lit_mini.raw'
+    if not f.exists():
+        pytest.skip('Private test data not available')
+    n = NLDN(str(f))
+    n.limit(lat=[34.5, 35], lon=[-95, -85])
+    val = n.quick_plot('ll')
     assert val is not None
     plt.close('all')

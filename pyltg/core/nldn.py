@@ -17,6 +17,7 @@ This works only for stroke/pulse level data, not flash level.
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from pyltg.core.baseclass import Ltg
 
@@ -151,3 +152,46 @@ class NLDN(Ltg):
         rawData.time = np.array(ymd + rawData.time.values, dtype='datetime64')
 
         self._add_record(rawData)
+
+    def quick_plot(self, plot_type, ax=None, max_pts=2000):
+        """
+        Quick plot with NLDN-appropriate defaults.
+
+        CG and IC pulses are plotted with different markers
+        (``'x'`` and ``'D'``) when under ``max_pts``.
+
+        Parameters
+        ----------
+        plot_type : str
+            ``'ll'`` for lat/lon, ``'zt'`` for time-height.
+        ax : matplotlib Axes, optional
+            Existing axes for overplotting.
+        max_pts : int, optional
+            Threshold for switching to pcolormesh. Default is 2000.
+
+        Returns
+        -------
+        list or QuadMesh
+            ``[cg_artist, ic_artist]`` for scatter, or ``QuadMesh``
+            for pcolormesh.
+        """
+        npts = self.count
+
+        cmap = plt.cm.get_cmap('Blues_r').copy()
+        cmap.set_under(alpha=0)
+
+        if npts > max_pts:
+            return super().plot(plot_type, ax=ax, max_pts=max_pts, cmap=cmap)
+        else:
+            plot_dict = {'color': 'blue', 'alpha': 1.0, 'size': 6,
+                         'zorder': 5, 'max_pts': npts + 1}
+
+            is_cg = self.type == 'G'
+
+            cg_plot = super().plot(plot_type, ax=ax, marker='x',
+                                   idx=is_cg, **plot_dict)
+
+            ic_plot = super().plot(plot_type, ax=cg_plot.axes, marker='D',
+                                   idx=~is_cg, **plot_dict)
+
+            return [cg_plot, ic_plot]
