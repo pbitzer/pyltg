@@ -5,8 +5,6 @@ The base class that other classes in the package use.
 
 import warnings
 
-import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 
 
@@ -337,7 +335,12 @@ class Ltg(object):
         Line2D, PathCollection, or QuadMesh
             The matplotlib artist.
         """
+        import numpy as np
+        import matplotlib.pyplot as plt
         from pyltg.utilities.plotting import time_axis_label
+
+        if self.count == 0:
+            raise ValueError("No active data to plot.")
 
         subplot_dict = {}
         plot_dict = {}
@@ -383,13 +386,12 @@ class Ltg(object):
         if idx is not None:
             x_data = x_data[idx]
             y_data = y_data[idx]
+            if not np.isscalar(color):
+                color = np.asarray(color)[idx]
 
         if not overplot:
             fig, ax = plt.subplots(subplot_kw=subplot_dict)
             ax.set_aspect('auto')
-        else:
-            plot_dict['scalex'] = False
-            plot_dict['scaley'] = False
 
         if plot_type == 'll' and has_cartopy:
             import cartopy.crs as ccrs
@@ -416,6 +418,7 @@ class Ltg(object):
                     markersize=size, marker=marker,
                     color=color,
                     alpha=alpha, clip_on=False, zorder=zorder,
+                    scalex=not overplot, scaley=not overplot,
                     **plot_dict,
                 )
                 val = val[0]

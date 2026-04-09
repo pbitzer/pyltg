@@ -26,7 +26,6 @@ import re
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from pyltg.core.baseclass import Ltg
 
@@ -398,9 +397,11 @@ class LMA(Ltg):
         -------
         matplotlib artist
         """
+        import matplotlib.pyplot as plt
+
         colors = self.time.astype('int64')
 
-        cmap = plt.cm.get_cmap('plasma').copy()
+        cmap = plt.colormaps['plasma'].copy()
         cmap.set_under(alpha=0)
 
         return super().plot(plot_type, ax=ax, max_pts=5000, cmap=cmap,

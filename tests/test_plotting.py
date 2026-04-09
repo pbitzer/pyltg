@@ -173,3 +173,42 @@ def test_nldn_quick_plot_ll():
     val = n.quick_plot('ll')
     assert val is not None
     plt.close('all')
+
+
+def test_plot_overplot_scatter_color_array():
+    """Overplotting with array color should not crash (scalex/scaley bug)."""
+    obj = _make_ltg(50)
+    fig, ax = plt.subplots()
+    val = obj.plot('zt', ax=ax, color=obj.time.astype('int64'))
+    assert isinstance(val, PathCollection)
+    assert val.axes is ax
+    plt.close('all')
+
+
+def test_plot_overplot_pcolormesh():
+    """Overplotting with pcolormesh should not crash (scalex/scaley bug)."""
+    obj = _make_ltg(2000)
+    fig, ax = plt.subplots()
+    val = obj.plot('zt', ax=ax, max_pts=1000)
+    assert isinstance(val, QuadMesh)
+    plt.close('all')
+
+
+def test_plot_idx_with_color_array():
+    """idx + array color should subset both data and color."""
+    obj = _make_ltg(50)
+    idx = np.zeros(50, dtype=bool)
+    idx[:10] = True
+    colors = obj.time.astype('int64')
+    val = obj.plot('zt', color=colors, idx=idx)
+    assert isinstance(val, PathCollection)
+    plt.close('all')
+
+
+def test_plot_empty_data():
+    """Plotting with no active data should raise ValueError."""
+    obj = _make_ltg(50)
+    obj.limit(lat=[99, 100])  # no data in this range
+    with pytest.raises(ValueError, match="No active data"):
+        obj.plot('zt')
+    plt.close('all')

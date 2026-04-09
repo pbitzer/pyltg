@@ -32,7 +32,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from pyltg.core.baseclass import Ltg
 
@@ -405,9 +404,11 @@ class ENTLN(Ltg):
             ``[cg_artist, ic_artist]`` for scatter, or ``QuadMesh``
             for pcolormesh.
         """
+        import matplotlib.pyplot as plt
+
         npts = self.count
 
-        cmap = plt.cm.get_cmap('Greens_r').copy()
+        cmap = plt.colormaps['Greens_r'].copy()
         cmap.set_under(alpha=0)
 
         if npts > max_pts:
