@@ -7,8 +7,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.collections import PathCollection, QuadMesh
+from pathlib import Path
 
 from pyltg.core.baseclass import Ltg
+from pyltg.core.lma import LMA
+from pyltg.core.hamma_src import HAMMA
+
+INTERNAL_DATA = Path(__file__).parent.parent / 'pyltg' / 'internal_testing_files'
+PRIVATE_DATA = Path(__file__).parent.parent / 'private_data_for_tests'
 
 
 def _make_ltg(n=100):
@@ -116,4 +122,30 @@ def test_plot_ll_no_cartopy(monkeypatch):
     with pytest.warns(UserWarning, match="Cartopy not available"):
         val = obj.plot('ll')
     assert isinstance(val, Line2D)
+    plt.close('all')
+
+
+def test_lma_quick_plot_zt():
+    f = INTERNAL_DATA / 'nalma_lylout_20170427_07_3600.dat.gz'
+    lma = LMA(str(f))
+    lma.limit(lat=[34, 35])
+    val = lma.quick_plot('zt')
+    assert val is not None
+    plt.close('all')
+
+
+def test_lma_quick_plot_ll():
+    f = INTERNAL_DATA / 'nalma_lylout_20170427_07_3600.dat.gz'
+    lma = LMA(str(f))
+    lma.limit(lat=[34, 35])
+    val = lma.quick_plot('ll')
+    assert val is not None
+    plt.close('all')
+
+
+def test_hamma_quick_plot_zt():
+    f = INTERNAL_DATA / '2018-11-10T19-47-49-776_1001_9.txt'
+    h = HAMMA(str(f))
+    val = h.quick_plot('zt')
+    assert val is not None
     plt.close('all')

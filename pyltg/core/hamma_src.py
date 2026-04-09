@@ -84,6 +84,7 @@ Now, overplot the "active" data, i.e., the data that falls within the limits pro
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from pyltg.core.baseclass import Ltg
 from pyltg.utilities.latlon import enu2lla
@@ -300,3 +301,29 @@ class HAMMA(Ltg):
         times = np.where(times == 0.0, np.nan, times)
 
         return times
+
+    def quick_plot(self, plot_type, ax=None):
+        """
+        Quick plot with HAMMA-appropriate defaults.
+
+        Sources are colored by time using the ``plasma`` colormap.
+
+        Parameters
+        ----------
+        plot_type : str
+            ``'ll'`` for lat/lon, ``'zt'`` for time-height.
+        ax : matplotlib Axes, optional
+            Existing axes for overplotting.
+
+        Returns
+        -------
+        matplotlib artist
+        """
+        colors = self.time.astype('int64')
+
+        cmap = plt.cm.get_cmap('plasma').copy()
+        cmap.set_under(alpha=0)
+
+        return super().plot(plot_type, ax=ax, max_pts=5000, cmap=cmap,
+                            color=colors, marker='o', alpha=1.0, size=6,
+                            zorder=5)
