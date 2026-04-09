@@ -3,6 +3,10 @@
 The base class that other classes in the package use.
 """
 
+import warnings
+
+import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 
 
@@ -281,3 +285,150 @@ class Ltg(object):
         count = np.count_nonzero(boolVal)
 
         return count
+
+    def plot(self, plot_type,
+             max_pts=1000,
+             marker='o', color='black', size=1, alpha=1.0, zorder=1,
+             cmap='plasma',
+             idx=None,
+             ax=None, t0=None, nogrid=False):
+        """
+        Make a plot of the (active) data.
+
+        Handles scatter-type and blocky-contour (pcolormesh) plots.
+        If the number of active data points exceeds `max_pts`, a
+        pcolormesh is drawn; otherwise a scatter/line plot.
+
+        Parameters
+        ----------
+        plot_type : str
+            The type of plot. ``'ll'`` for lat/lon map, ``'zt'`` for
+            time-height.
+        max_pts : int, optional
+            Point count threshold for switching to pcolormesh.
+            Default is 1000.
+        marker : str, optional
+            Matplotlib marker. Default is ``'o'``.
+        color : str or array-like, optional
+            Scalar color string or array of values for colormapping.
+            Default is ``'black'``.
+        size : float, optional
+            Marker size. Default is 1.
+        alpha : float, optional
+            Marker alpha. Default is 1.0.
+        zorder : int, optional
+            Drawing order. Default is 1.
+        cmap : str or Colormap, optional
+            Colormap for pcolormesh or array-colored scatter.
+            Default is ``'plasma'``.
+        idx : array-like, optional
+            Boolean mask to subset active data for plotting.
+            ``max_pts`` is still evaluated against all active data.
+        ax : matplotlib Axes, optional
+            Existing axes for overplotting.
+        t0 : numpy datetime64[ns], optional
+            Time origin for ``'zt'`` plots. Subtracted from time data.
+        nogrid : bool, optional
+            Suppress Cartopy gridlines on ``'ll'`` plots.
+            Default is False.
+
+        Returns
+        -------
+        Line2D, PathCollection, or QuadMesh
+            The matplotlib artist.
+        """
+        from pyltg.utilities.plotting import time_axis_label
+
+        subplot_dict = {}
+        plot_dict = {}
+
+        overplot = ax is not None
+
+        if plot_type == 'll':
+            x_data = self.lon
+            y_data = self.lat
+
+            lon_extent = (x_data.min(), x_data.max())
+            lat_extent = (y_data.min(), y_data.max())
+
+            x_bins = np.linspace(*lon_extent, 50)
+            y_bins = np.linspace(*lat_extent, 50)
+
+            try:
+                import cartopy.crs as ccrs
+                subplot_dict['projection'] = ccrs.Mercator()
+                plot_dict['transform'] = ccrs.PlateCarree()
+                has_cartopy = True
+            except ImportError:
+                warnings.warn(
+                    "Cartopy not available, falling back to plain axes",
+                    stacklevel=2,
+                )
+                has_cartopy = False
+
+        elif plot_type == 'zt':
+            x_data = self.time.astype('int64')
+            y_data = self.alt
+
+            if t0 is not None:
+                x_data = x_data - np.datetime64(t0, 'ns').astype('int64')
+
+            x_bins = np.linspace(x_data.min(), x_data.max(), 50)
+            y_bins = np.arange(21)
+            has_cartopy = False
+
+        else:
+            raise ValueError(f"Invalid plot type '{plot_type}'. Use 'll' or 'zt'.")
+
+        if idx is not None:
+            x_data = x_data[idx]
+            y_data = y_data[idx]
+
+        if not overplot:
+            fig, ax = plt.subplots(subplot_kw=subplot_dict)
+            ax.set_aspect('auto')
+        else:
+            plot_dict['scalex'] = False
+            plot_dict['scaley'] = False
+
+        if plot_type == 'll' and has_cartopy:
+            import cartopy.crs as ccrs
+            ax.set_extent(
+                [lon_extent[0], lon_extent[1], lat_extent[0], lat_extent[1]],
+                ccrs.PlateCarree(),
+            )
+            if not nogrid:
+                ax.gridlines(draw_labels=True, linestyle=':')
+
+        # Decide scatter vs pcolormesh
+        if self.count > max_pts:
+            histo, xedge, yedge = np.histogram2d(
+                x_data, y_data, bins=[x_bins, y_bins]
+            )
+            val = ax.pcolormesh(
+                xedge, yedge, histo.T, cmap=cmap, vmin=1, **plot_dict
+            )
+        else:
+            if np.isscalar(color):
+                val = ax.plot(
+                    x_data, y_data,
+                    linestyle='none', markerfacecolor='None',
+                    markersize=size, marker=marker,
+                    color=color,
+                    alpha=alpha, clip_on=False, zorder=zorder,
+                    **plot_dict,
+                )
+                val = val[0]
+            else:
+                val = ax.scatter(
+                    x_data, y_data,
+                    s=size, marker=marker,
+                    c=color, cmap=cmap,
+                    alpha=alpha, clip_on=False, zorder=zorder,
+                    **plot_dict,
+                )
+
+        if plot_type == 'zt' and t0 is None and not overplot:
+            time_axis_label(ax, t0=x_data.min())
+
+        return val
