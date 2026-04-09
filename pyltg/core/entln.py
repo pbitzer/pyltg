@@ -226,9 +226,9 @@ def read_ascii(file, full=False):
     # Define the columns/types, as they are in the file
     types = {'flashPortionHistoryID': np.int64, 'flashPortionID': str, 'flashID': str,
              'nullTime': str, 'time': str,
-             'lat': np.float, 'lon': np.float, 'alt': np.float,
+             'lat': float, 'lon': float, 'alt': float,
              'type': str,
-             'amp': np.float}
+             'amp': float}
 
     # Make a dict for the keywords to read_csv, no matter what:
     pdArgs = {'skiprows': 1,
@@ -257,7 +257,7 @@ def read_ascii(file, full=False):
     # We'll read the chunks into a list:
     rawData = list()
 
-    for this_file in np.atleast_1d(filename):
+    for this_file in np.atleast_1d(file):
 
         reader = pd.read_csv(this_file, **pdArgs)
 
@@ -270,7 +270,7 @@ def read_ascii(file, full=False):
                         'nullTime'], axis=1, inplace=True)
 
             # Reinterpret the time string field as datetime64:
-            chunk.time = chunk.time.astype('datetime64')
+            chunk.time = chunk.time.astype('datetime64[ns]')
 
             # change the ype field to a string of G or C (for CG/IC)
             chunk.type.replace(to_replace={'0': 'G', '1': 'C'},
@@ -366,7 +366,7 @@ class ENTLN(Ltg):
 
             if file_ext == '.JSON':
                 file_type = 'JSON'
-            elif file_ext == '.GZ':
+            elif file_ext in ('.GZ', '.CSV'):
                 file_type = 'GZ'
             else:
                 msg = "Unable to guess file type from extension."
@@ -381,6 +381,51 @@ class ENTLN(Ltg):
             raise FileNotFoundError(msg)
 
         self._add_record(data)
+
+    def quick_plot(self, plot_type, ax=None, max_pts=2000):
+        """
+        Quick plot with ENTLN-appropriate defaults.
+
+        CG and IC pulses are plotted with different markers
+        (``'x'`` and ``'D'``) when under ``max_pts``.
+
+        Parameters
+        ----------
+        plot_type : str
+            ``'ll'`` for lat/lon, ``'zt'`` for time-height.
+        ax : matplotlib Axes, optional
+            Existing axes for overplotting.
+        max_pts : int, optional
+            Threshold for switching to pcolormesh. Default is 2000.
+
+        Returns
+        -------
+        list or QuadMesh
+            ``[cg_artist, ic_artist]`` for scatter, or ``QuadMesh``
+            for pcolormesh.
+        """
+        import matplotlib.pyplot as plt
+
+        npts = self.count
+
+        cmap = plt.colormaps['Greens_r'].copy()
+        cmap.set_under(alpha=0)
+
+        if npts > max_pts:
+            return super().plot(plot_type, ax=ax, max_pts=max_pts, cmap=cmap)
+        else:
+            plot_dict = {'color': 'green', 'alpha': 1.0, 'size': 6,
+                         'zorder': 5, 'max_pts': npts + 1}
+
+            is_cg = self.type == 'G'
+
+            cg_plot = super().plot(plot_type, ax=ax, marker='x',
+                                   idx=is_cg, **plot_dict)
+
+            ic_plot = super().plot(plot_type, ax=cg_plot.axes, marker='D',
+                                   idx=~is_cg, **plot_dict)
+
+            return [cg_plot, ic_plot]
 
 
 def split_file(file):
