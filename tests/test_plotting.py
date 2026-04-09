@@ -68,3 +68,52 @@ def test_plot_invalid_type():
     with pytest.raises(ValueError):
         obj.plot('bad')
     plt.close('all')
+
+
+def test_plot_ll_scatter():
+    obj = _make_ltg(50)
+    val = obj.plot('ll')
+    assert isinstance(val, (Line2D, PathCollection))
+    plt.close('all')
+
+
+def test_plot_ll_pcolormesh():
+    obj = _make_ltg(2000)
+    val = obj.plot('ll', max_pts=1000)
+    assert isinstance(val, QuadMesh)
+    plt.close('all')
+
+
+def test_plot_ll_nogrid():
+    """Verify nogrid=True doesn't error."""
+    obj = _make_ltg(50)
+    val = obj.plot('ll', nogrid=True)
+    assert isinstance(val, Line2D)
+    plt.close('all')
+
+
+def test_plot_ll_overplot():
+    obj = _make_ltg(50)
+    val1 = obj.plot('ll', nogrid=True)
+    val2 = obj.plot('ll', ax=val1.axes, nogrid=True, color='red')
+    assert val2.axes is val1.axes
+    plt.close('all')
+
+
+def test_plot_ll_no_cartopy(monkeypatch):
+    """Simulate missing cartopy and verify fallback."""
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if 'cartopy' in name:
+            raise ImportError("mocked")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, '__import__', mock_import)
+
+    obj = _make_ltg(50)
+    with pytest.warns(UserWarning, match="Cartopy not available"):
+        val = obj.plot('ll')
+    assert isinstance(val, Line2D)
+    plt.close('all')
