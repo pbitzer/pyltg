@@ -75,8 +75,8 @@ class NLDN(Ltg):
 
         Parameters
         ----------
-        filename : str
-            The file name to be read in.
+        filename : str or list of str
+            The file name(s) to be read in. For multiple files, use a list.
 
         """
 
@@ -87,70 +87,74 @@ class NLDN(Ltg):
 
     def readFile(self, filename):
         """
-        Given a filename, read the data and load it into the object.
+        Given a filename (or list of filenames), read the data and load it
+        into the object.
 
         Parameters
         ----------
-        filename : string
-            The file name to be read.
+        filename : str or list of str
+            The file name(s) to be read. For multiple files, use a list.
 
         """
-
-        if isinstance(filename, list):
-            if len(filename) > 1:
-                print('Multiple files not allowed yet')
-            filename = filename[0]
 
         colNames = ('date', 'time', 'lat', 'lon', 'current', '_kA', '_multi', 'semimajor',
                     'semiminor', 'axis_ratio', 'azimuth', 'chisq', 'num_sensors', 'type')
 
-        rawData = list()
-
         chunkSize = 100000  # How much of the file do we read at once?
 
-        reader = pd.read_csv(filename, names=colNames, header=None,
-                             delim_whitespace=True, iterator=True)
+        allData = list()
 
-        # Read the first line:
-        line = reader.get_chunk(1)
+        for this_file in np.atleast_1d(filename):
+            rawData = list()
 
-        # Get the date from this line, and assume all dates are the same:
-        date = line.date.str.split('/|-')
+            reader = pd.read_csv(this_file, names=colNames, header=None,
+                                 sep=r'\s+', iterator=True)
 
-        year = date.str[2].values
-        month = date.str[0].values
-        day = date.str[1].values
+            # Read the first line:
+            line = reader.get_chunk(1)
 
-        if int(year[0]) < 90:
-            year = '20' + year
-        else:
-            year = '19' + year
+            # Get the date from this line, and assume all dates are the same
+            # within this file:
+            date = line.date.str.split('/|-')
 
-        # Drop columns we don't need:
-        line.drop(['date', '_kA'], axis=1, inplace=True)
+            year = date.str[2].values
+            month = date.str[0].values
+            day = date.str[1].values
 
-        rawData.append(line)
+            if int(year[0]) < 90:
+                year = '20' + year
+            else:
+                year = '19' + year
 
-        # Now, read in the rest, chunking:
-        reader.chunksize = chunkSize
-        for chunk in reader:
-            chunk.drop(['date', '_kA'], axis=1, inplace=True)
+            # Drop columns we don't need:
+            line.drop(['date', '_kA'], axis=1, inplace=True)
 
-            rawData.append(chunk)
+            rawData.append(line)
 
-        rawData = pd.concat(rawData)
+            # Now, read in the rest, chunking:
+            reader.chunksize = chunkSize
+            for chunk in reader:
+                chunk.drop(['date', '_kA'], axis=1, inplace=True)
+
+                rawData.append(chunk)
+
+            rawData = pd.concat(rawData)
+
+            ymd = year + '-' + month + '-' + day + 'T'
+
+            rawData.time = np.array(ymd + rawData.time.values, dtype='datetime64')
+
+            allData.append(rawData)
+
+        allData = pd.concat(allData)
 
         # There are certain NLDN data files that have duplicates, namely
         # the "enhanced" GLD-NLDN data files (These contain locations from
         # both GLD360 and NLDN). Try to drop these duplicates:
-        rawData.drop_duplicates(inplace=True)
+        allData.drop_duplicates(inplace=True)
         # NOTE: dropping duplicates along the way doesn't help speed
 
-        ymd = year + '-' + month + '-' + day + 'T'
-
-        rawData.time = np.array(ymd + rawData.time.values, dtype='datetime64')
-
-        self._add_record(rawData)
+        self._add_record(allData)
 
     def quick_plot(self, plot_type, ax=None, max_pts=2000):
         """
