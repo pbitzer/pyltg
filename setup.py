@@ -1,3 +1,5 @@
+import setuptools
+
 # Go get the version
 from pathlib import Path
 
