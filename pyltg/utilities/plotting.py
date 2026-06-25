@@ -59,10 +59,10 @@ def gap_nan(arr1, arr2, gap):
                 chunk2 = arr2[idxGap[_gapNum - 1] + 1:idx]
 
             gapArr1.append(chunk1)
-            gapArr1.append(np.array([np.NaN]))
+            gapArr1.append(np.array([np.nan]))
 
             gapArr2.append(chunk2)
-            gapArr2.append(np.array([np.NaN]))
+            gapArr2.append(np.array([np.nan]))
 
         # Get the last chunk of data
         gapArr1.append(arr1[idxGap[-1] + 1:-1])
