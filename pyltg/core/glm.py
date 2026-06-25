@@ -681,7 +681,7 @@ class GLM():
 
             # Some GLM files have no data. Check for these cases:
             # todo: do we need to check groups and flashes too?
-            if this_glm.dataset.dims['number_of_events'] == 0:
+            if this_glm.dataset.sizes['number_of_events'] == 0:
                 continue
 
             this_event = _extract_events(this_glm)
