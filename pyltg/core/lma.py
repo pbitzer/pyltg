@@ -299,7 +299,7 @@ class LMA(Ltg):
 
         # Get the data and assign the column names
         this_src = pd.read_csv(file, compression='gzip', header=None,
-                               delim_whitespace=True,
+                               sep=r'\s+',
                                skiprows=dataLine+1, names=colNames)
 
         # Extract the day of the data:
