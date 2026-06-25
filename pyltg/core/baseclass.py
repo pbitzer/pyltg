@@ -24,7 +24,10 @@ class Ltg(object):
             self._verify_columns()
 
     def __len__(self):
-        # Only count active
+        # Only count active rows. An empty/uninitialized object has no
+        # 'active' column, in which case there are zero records.
+        if 'active' not in self._data.columns:
+            return 0
 
         return self._data[self._data.active].shape[0]
 

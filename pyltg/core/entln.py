@@ -190,8 +190,8 @@ def read_json(file, get_flashes=False):
                         },
                        inplace=True
                        )
-        flashes.start_time = flashes.start_time.astype(np.datetime64)
-        flashes.end_time = flashes.end_time.astype(np.datetime64)
+        flashes.start_time = flashes.start_time.astype('datetime64[ns]')
+        flashes.end_time = flashes.end_time.astype('datetime64[ns]')
 
         # Now the rest
         flashes = _fix_fields(flashes)
